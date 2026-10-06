@@ -1,0 +1,76 @@
+{
+  "dataset": "VisDrone2019-DET vehicles (five classes)",
+  "seed": 32,
+  "source": "https://github.com/VisDrone/VisDrone-Dataset",
+  "mirror": "https://github.com/ultralytics/assets/releases/download/v0.0.0",
+  "mapping": {
+    "10": 0,
+    "4": 1,
+    "6": 2,
+    "9": 3,
+    "3": 4,
+    "5": 4,
+    "7": 4,
+    "8": 4
+  },
+  "names": [
+    "motorcycle",
+    "car",
+    "truck",
+    "bus",
+    "other"
+  ],
+  "protocol": "official train/val/test-dev, ignored regions masked gray; not official VisDrone metrics",
+  "splits": {
+    "train": {
+      "images": 6471,
+      "boxes": {
+        "car": 144866,
+        "other": 43494,
+        "truck": 12875,
+        "motorcycle": 29647,
+        "bus": 5926
+      },
+      "empty_images": 148,
+      "masked_images": 3020
+    },
+    "val": {
+      "images": 548,
+      "boxes": {
+        "car": 14064,
+        "motorcycle": 4886,
+        "other": 4839,
+        "truck": 750,
+        "bus": 251
+      },
+      "empty_images": 2,
+      "masked_images": 351
+    },
+    "test": {
+      "images": 1610,
+      "boxes": {
+        "car": 28074,
+        "truck": 2659,
+        "motorcycle": 5845,
+        "other": 8202,
+        "bus": 2940
+      },
+      "empty_images": 22,
+      "masked_images": 616
+    }
+  },
+  "archives": {
+    "VisDrone2019-DET-train": {
+      "sha256": "86a77eba93137bfc16e4993860de9245b0675c0dba0d3ab98fb458699e256f84",
+      "bytes": 1549875511
+    },
+    "VisDrone2019-DET-val": {
+      "sha256": "abeea063037e5d20398837deb11084e652402a34ddf4f207bdf541a6f2a35ef9",
+      "bytes": 81638851
+    },
+    "VisDrone2019-DET-test-dev": {
+      "sha256": "b28a94b06dfd9e36ce77ff8155fb82b9d2c030f198a76105933bd56c6ea6a68d",
+      "bytes": 311251787
+    }
+  }
+}
