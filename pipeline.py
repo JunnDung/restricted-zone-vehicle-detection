@@ -175,7 +175,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
                     votes[track][category] += float(conf)
                     last_seen[track] = seconds
                     category = max(votes[track], key=votes[track].get)
-                    detections.append({"track_id": track, "class": category, "confidence": float(conf), "bbox": box,
+                    detections.append({"track_id": track, "class": category, "confidence": float(conf), "confirmable": conf >= confidence, "bbox": box,
                                        "point": (min(1,max(0,(box[0]+box[2])/(2*w))), min(1,max(0,box[3]/h)))})
             # Bound metadata for long camera sessions; ByteTrack IDs are monotonic.
             for track in list(last_seen):

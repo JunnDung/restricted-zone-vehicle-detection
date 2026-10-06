@@ -13,6 +13,19 @@ def det(x=.5, cls="car", track=1):
 
 
 class RulesTest(unittest.TestCase):
+    def test_weak_detections_cannot_confirm_or_rearm_a_visit(self):
+        e=IntrusionEngine(config())
+        weak={**det(),"confidence":.12,"confirmable":False}
+        for t in (0,.1,.3):
+            self.assertEqual(e.update([weak],t),[])
+        e.update([det()],.4);e.update([det()],.5)
+        event=e.update([det()],.7)
+        self.assertEqual(len(event),1)
+        self.assertEqual(event[0]["entered_seconds"],.4)
+        self.assertEqual(e.update([weak],.8),[])
+        self.assertEqual(e.active(.8),{(1,"road")})
+        for t in (.9,1.0,1.2):
+            self.assertEqual(e.update([det()],t),[])
     def test_visit_exit_and_reentry(self):
         e = IntrusionEngine(config())
         for t in (0, .1, .2):

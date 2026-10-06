@@ -109,7 +109,8 @@ class IntrusionEngine:
                     state.position = False
                 if state.position:
                     state.outside_since = None
-                    if not eligible:
+                    # Low-score boxes maintain identity/position, not violation evidence.
+                    if not eligible or not det.get("confirmable",True):
                         state.since, state.hits = None, 0
                         continue
                     if state.since is None:
