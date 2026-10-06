@@ -35,6 +35,24 @@ class RulesTest(unittest.TestCase):
             events = sum((e.update([det()], t) for t in (0, .1, .3)), [])
             self.assertEqual(len(events), expected)
 
+    def test_entry_only_accepts_a_brief_clear_outside_observation(self):
+        e=IntrusionEngine(config(alert_initial=False))
+        e.update([det(.1)],0)
+        e.update([det()],.1)
+        e.update([det()],.2)
+        events=e.update([det()],.4)
+        self.assertEqual(len(events),1)
+        self.assertEqual(events[0]["kind"],"entry")
+
+    def test_class_change_inside_does_not_rearm_a_visit(self):
+        e=IntrusionEngine(config(classes=["car"]))
+        for t in (0,.1,.3):
+            e.update([det()],t)
+        for t in (.4,.7):
+            e.update([det(cls="truck")],t)
+        for t in (.8,.9,1.2):
+            self.assertEqual(e.update([det()],t),[])
+
     def test_gap_does_not_count_as_dwell(self):
         e = IntrusionEngine(config())
         e.update([det()], 0)

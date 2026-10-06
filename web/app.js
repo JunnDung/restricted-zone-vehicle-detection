@@ -62,6 +62,7 @@ function renderCanvas() {
   if(drawing&&draft.length){ctx.beginPath();draft.forEach(([x,y],k)=>k?ctx.lineTo(x*canvas.width,y*canvas.height):ctx.moveTo(x*canvas.width,y*canvas.height));ctx.strokeStyle="#51dab1";ctx.lineWidth=2;ctx.stroke();draft.forEach(([x,y])=>{ctx.beginPath();ctx.arc(x*canvas.width,y*canvas.height,5,0,Math.PI*2);ctx.fillStyle="#51dab1";ctx.fill();});}
 }
 function showMap() {$("liveFrame").hidden=true;$("resultVideo").hidden=true;$("resultVideo").pause();canvas.hidden=false;renderCanvas();}
+function resetSession() {jobId=null;job=null;allEvents=[];seen=new Set();renderEvents();$("alertCount").textContent="0";$("activeCount").textContent="0";$("fps").textContent="—";$("sessionBadge").textContent="CHƯA CHẠY";$("sessionBadge").classList.remove("running");$("progress").value=0;$("phase").textContent="Sẵn sàng phân tích";$("progressText").textContent="Kiểm tra vùng rồi bắt đầu.";$("downloads").hidden=true;$("watchResult").hidden=true;$("stop").disabled=true;}
 function drawingState(value) {drawing=value;$("drawingTools").hidden=!value;$("drawHint").textContent=value?"Click thêm đỉnh · Enter hoàn tất · Escape hủy.":"Kéo các đỉnh để chỉnh vùng. Lưu bản đồ sau khi điều chỉnh.";renderCanvas();}
 $("drawZone").onclick=()=>{showMap();draft=[];drawingState(true);canvas.focus();};
 $("cancelDraw").onclick=()=>{draft=[];drawingState(false);};
@@ -85,6 +86,7 @@ $("importMap").onchange=guarded(async e=>{const file=e.target.files[0];if(!file)
 async function loadSources(chosen) {const value=chosen||$("source").value;const entries=await api("/api/sources");$("source").replaceChildren(...entries.map(e=>option(e.id,e.name)));if(value.startsWith("camera:"))$("source").append(option(value,"Camera USB "+value.split(":")[1]));$("source").value=entries.some(e=>e.id===value)||value.startsWith("camera:")?value:"parking";}
 async function loadSource() {
   if(job&&["running","queued"].includes(job.status))throw new Error("Dừng phiên hiện tại trước khi đổi nguồn.");
+  resetSession();$("start").disabled=true;
   const current=++sourceVersion, source=$("source").value;$("viewerEmpty").textContent="Đang tải ảnh camera…";$("viewerEmpty").hidden=false;showMap();
   const map=await api("/api/map?source_id="+encodeURIComponent(source));
   // Fetch before image assignment so camera failures have a useful error message.
@@ -94,7 +96,7 @@ async function loadSource() {
   if(current!==sourceVersion){URL.revokeObjectURL(url);return;}
   await new Promise((resolve,reject)=>{background.onload=()=>{canvas.width=background.naturalWidth;canvas.height=background.naturalHeight;URL.revokeObjectURL(url);resolve();};background.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Không tải được ảnh nguồn."));};background.src=url;});
   if(current!==sourceVersion)return;
-  zones=map.zones;selected=0;draft=[];drawingState(false);renderForm();renderCanvas();$("viewerEmpty").hidden=true;
+  zones=map.zones;selected=0;draft=[];drawingState(false);renderForm();renderCanvas();$("viewerEmpty").hidden=true;$("start").disabled=false;
 }
 $("source").onchange=guarded(loadSource);
 $("upload").onchange=guarded(async e=>{const file=e.target.files[0];if(!file)return;if(file.size>500*1024*1024)throw new Error("Video tối đa 500 MB.");tell("Đang tải và kiểm tra video…");const data=new FormData();data.append("file",file);const source=await api("/api/sources",{method:"POST",body:data});await loadSources(source.id);await loadSource();tell("Video đã sẵn sàng. Hãy chỉnh vùng theo góc quay.");e.target.value="";});
@@ -130,7 +132,7 @@ $("watchResult").onclick=()=>{canvas.hidden=true;$("liveFrame").hidden=true;$("r
 async function poll() {
   if(!jobId||polling)return;polling=true;
   try {const selectedJob=jobId;const [current,events]=await Promise.all([api(`/api/jobs/${selectedJob}`),api(`/api/jobs/${selectedJob}/events`)]);if(selectedJob!==jobId)return;
-    job=current;const fresh=events.some(e=>!seen.has(e.id));events.forEach(e=>seen.add(e.id));if(fresh&&["running","queued"].includes(job.status))beep();
+    job=current;const fresh=events.some(e=>!seen.has(e.id));events.forEach(e=>seen.add(e.id));if(fresh)beep();
     if(events.length!==allEvents.length){allEvents=events;renderEvents();}renderJob();
     if(job.processed_frames&&!drawing&&$("resultVideo").hidden&&(["queued","running"].includes(job.status)||!canvas.hidden)){
       if(["queued","running"].includes(job.status)){canvas.hidden=true;$("liveFrame").hidden=false;}
@@ -142,9 +144,27 @@ setInterval(()=>{if(job&&["running","queued"].includes(job.status))poll();},1000
 async function loadHistory() {
   const jobs=await api("/api/jobs");$("historyList").replaceChildren();if(!jobs.length){$("historyList").append(element("div","Chưa có phiên giám sát.","empty"));return;}
   for(const session of jobs){const row=element("div",undefined,"history-row"),info=element("div",undefined,"info");info.append(element("strong",session.name),element("small",new Date(session.created).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"})+" · "+(statusLabels[session.status]||session.status)+" · "+(session.model||session.request.model_key)));
-    const open=element("button","Mở phiên","secondary");open.onclick=guarded(async()=>{if(job&&["running","queued"].includes(job.status)&&jobId!==session.id)throw new Error("Dừng hoặc chờ phiên hiện tại trước khi mở phiên khác.");jobId=session.id;job=session;seen=new Set();allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));zones=structuredClone(session.request.zone_map.zones);selected=0;renderForm();renderJob();renderEvents();page("workspace");canvas.hidden=true;$("resultVideo").hidden=true;$("liveFrame").hidden=false;$("liveFrame").src=`/api/jobs/${jobId}/files/preview.jpg?t=${Date.now()}`;$("drawHint").textContent="Đang xem cấu hình và kết quả của phiên đã lưu.";});
+    const open=element("button","Mở phiên","secondary");open.onclick=guarded(async()=>{
+      if(job&&["running","queued"].includes(job.status)&&jobId!==session.id)throw new Error("Dừng hoặc chờ phiên hiện tại trước khi mở phiên khác.");
+      if(!["queued","running"].includes(session.status)) {job=null;await loadSources(session.request.source_id);await loadSource();}
+      jobId=session.id;job=session;seen=new Set();allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));
+      zones=structuredClone(session.request.zone_map.zones);selected=0;renderForm();
+      for(const [id,key] of [["modelKey","model_key"],["confidence","confidence"],["imgsz","imgsz"],["device","device"],["maxSeconds","max_seconds"]])$(id).value=session.request[key];
+      renderJob();renderEvents();page("workspace");canvas.hidden=true;$("resultVideo").hidden=true;$("liveFrame").hidden=false;
+      $("liveFrame").src=`/api/jobs/${jobId}/files/preview.jpg?t=${Date.now()}`;$("drawHint").textContent="Đang xem cấu hình và kết quả của phiên đã lưu.";
+    });
     const remove=element("button","Xóa","danger-text");remove.onclick=guarded(async()=>{if(!confirm("Xóa phiên và toàn bộ bằng chứng của phiên này?"))return;await api(`/api/jobs/${session.id}`,{method:"DELETE"});if(jobId===session.id){jobId=null;job=null;allEvents=[];renderEvents();await loadSource();}await loadHistory();});
     row.append(info,element("span",`${session.event_count||0} cảnh báo`,"history-count"),open,remove);$("historyList").append(row);}
 }
 $("refreshHistory").onclick=guarded(loadHistory);
-guarded(async()=>{const health=await api("/api/health");$("hardware").textContent=health.device_name;await loadSources();await loadSource();if(health.active_job){jobId=health.active_job;job=await api(`/api/jobs/${jobId}`);allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));renderEvents();await poll();}})();
+async function trainingStatus() {
+  const health=await api("/api/health"),training=health.training;
+  $("hardware").textContent=health.device_name;
+  if(health.available_models?.includes("large")&&!document.querySelector('#modelKey option[value="large"]'))$("modelKey").prepend(option("large","YOLO11s · MIO-TCD + VisDrone (đã nghiệm thu)"));
+  if(!training){$("trainingStatus").textContent="Chưa khởi chạy. Quy trình GPU tại máy: scripts/prepare_large.py → scripts/train_large.py. Checkpoint đang dùng vẫn là bản VisDrone đã được kiểm chứng.";return health;}
+  const names={verifying:"Đang kiểm tra checksum dữ liệu",training:"Đang huấn luyện trên GPU tại máy",evaluating:"Đang đánh giá mô hình",completed:"Huấn luyện và đánh giá đã hoàn tất",error:"Phiên huấn luyện gặp lỗi"};
+  $("trainingStatus").textContent=`${names[training.status]||training.status} · ${training.train_images||0} ảnh train · epoch ${training.epoch||0}/${training.epochs||0} · ${training.device||"GPU"}${training.status==="completed"?(training.accepted?" · Mô hình mới đã qua tiêu chí nghiệm thu.":" · Giữ mô hình cũ vì ứng viên chưa đạt tiêu chí."):""}${training.error?" · "+training.error:""}`;
+  return health;
+}
+setInterval(()=>guarded(trainingStatus)(),15000);
+guarded(async()=>{const health=await trainingStatus();if(health.recommended_model)$("modelKey").value=health.recommended_model;await loadSources();await loadSource();if(health.active_job){jobId=health.active_job;job=await api(`/api/jobs/${jobId}`);allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));renderEvents();await poll();}})();

@@ -103,12 +103,15 @@ class IntrusionEngine:
                     state.since, state.outside_since, state.hits = None, None, 0
                 distance = cv2.pointPolygonTest(self.polygons[z.id], tuple(det["point"]), True)
                 eligible = det["class"] in z.classes
-                if distance > z.margin and eligible:
+                if distance > z.margin:
                     state.position = True
-                elif distance < -z.margin or not eligible:
+                elif distance < -z.margin:
                     state.position = False
                 if state.position:
                     state.outside_since = None
+                    if not eligible:
+                        state.since, state.hits = None, 0
+                        continue
                     if state.since is None:
                         state.since = seconds
                     state.hits += 1
@@ -119,11 +122,13 @@ class IntrusionEngine:
                                        "entered_seconds": round(state.since, 3), "confirmed_seconds": round(seconds, 3),
                                        "kind": "entry" if state.saw_outside else "initial_presence", "point": list(det["point"])})
                 else:
+                    if distance < -z.margin:
+                        state.saw_outside = True
                     state.since, state.hits = None, 0
                     if state.outside_since is None:
                         state.outside_since = seconds
                     if seconds - state.outside_since + 1e-9 >= z.exit_seconds:
-                        state.alerted, state.saw_outside = False, True
+                        state.alerted = False
         return events
 
     def active(self, seconds):
