@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const labels = {motorcycle:"Xe máy",car:"Ô tô",truck:"Xe tải",bus:"Xe buýt",other:"Khác / xe đạp"};
 const canvas = $("canvas"), ctx = canvas.getContext("2d"), background = new Image();
-let zones = [], selected = 0, drawing = false, draft = [], drag = -1, jobId = null, job = null, allEvents = [], seen = new Set(), audio = null, polling = false, sourceVersion = 0;
+let zones = [], selected = 0, drawing = false, draft = [], drag = -1, jobId = null, job = null, allEvents = [], seen = new Set(), audio = null, polling = false, sourceVersion = 0, evidenceEvent = null;
 const statusLabels = {queued:"Đang chuẩn bị",running:"Đang giám sát",completed:"Đã hoàn tất",stopped:"Đã dừng",error:"Có lỗi"};
 
 function tell(message, error=false) { $("message").textContent=message; $("message").classList.toggle("error",error); $("message").hidden=false; }
@@ -125,10 +125,12 @@ function renderEvents() {
   if(!events.length){$("events").append(element("div","Chưa có cảnh báo phù hợp. Cảnh báo cần đủ số khung và thời gian xác nhận.","empty"));return;}
   for(const event of events){const card=element("button",undefined,"event"), image=element("img");image.src=`/api/jobs/${jobId}/evidence/${event.id}`;image.alt="Bằng chứng "+event.zone_name;image.loading="lazy";
     const info=element("div"), time=element("span",`${event.confirmed_seconds.toFixed(2)}s · #${event.track_id}`,"time");info.append(time,element("strong",`${labels[event.class]} · ${event.zone_name}`),element("small",event.kind==="entry"?"Vào vùng từ bên ngoài":"Đã có trong vùng khi bắt đầu"),element("small",`${event.severity==="high"?"Vi phạm":"Lưu ý"} · Tin cậy ${(event.confidence*100).toFixed(0)}%`));card.append(image,info);
-    card.onclick=()=>{$("evidenceImage").src=image.src;$("evidenceCaption").textContent=`${event.zone_name} · ${labels[event.class]} · track #${event.track_id} · vào vùng ${event.entered_seconds}s, xác nhận ${event.confirmed_seconds}s`;$("evidenceDialog").showModal();};$("events").append(card);}
+    card.onclick=()=>{evidenceEvent=event;$("reviewEvidence").disabled=!["completed","stopped"].includes(job?.status);$("evidenceImage").src=image.src;$("evidenceCaption").textContent=`${event.zone_name} · ${labels[event.class]} · track #${event.track_id} · vào vùng ${event.entered_seconds}s, xác nhận ${event.confirmed_seconds}s`;$("evidenceDialog").showModal();};$("events").append(card);}
 }
 $("filterClass").onchange=renderEvents;$("closeEvidence").onclick=()=>$("evidenceDialog").close();
-$("watchResult").onclick=()=>{canvas.hidden=true;$("liveFrame").hidden=true;$("resultVideo").hidden=false;$("resultVideo").src=`/api/jobs/${jobId}/files/annotated.mp4`;$("resultVideo").play().catch(()=>{});};
+function watchVideo(seconds=0) {canvas.hidden=true;$("liveFrame").hidden=true;const video=$("resultVideo");video.hidden=false;video.onloadedmetadata=()=>{video.currentTime=Math.min(Math.max(0,seconds),Math.max(0,video.duration-.05));video.play().catch(()=>{});};video.src=`/api/jobs/${jobId}/files/annotated.mp4`;}
+$("watchResult").onclick=()=>watchVideo();
+$("reviewEvidence").onclick=()=>{$("evidenceDialog").close();watchVideo(evidenceEvent.frame_index/job.metadata.fps-2);$("resultVideo").scrollIntoView({block:"center"});};
 async function poll() {
   if(!jobId||polling)return;polling=true;
   try {const selectedJob=jobId;const [current,events]=await Promise.all([api(`/api/jobs/${selectedJob}`),api(`/api/jobs/${selectedJob}/events`)]);if(selectedJob!==jobId)return;
@@ -159,12 +161,13 @@ async function loadHistory() {
 $("refreshHistory").onclick=guarded(loadHistory);
 async function trainingStatus() {
   const health=await api("/api/health"),training=health.training;
-  $("hardware").textContent=training&&["verifying","waiting_gpu","training","evaluating"].includes(training.status)?"CPU giám sát · GPU dành cho train":health.device_name;
+  $("hardware").textContent=training&&["verifying","waiting_gpu","preparing_train","training","evaluating"].includes(training.status)?"CPU giám sát · GPU dành cho train":health.device_name;
   if(health.available_models?.includes("large")&&!document.querySelector('#modelKey option[value="large"]'))$("modelKey").prepend(option("large","YOLO11s · MIO-TCD + VisDrone (đã nghiệm thu)"));
   if(!training){$("trainingStatus").textContent="Chưa khởi chạy. Quy trình GPU tại máy: scripts/prepare_large.py → scripts/train_large.py. Checkpoint đang dùng vẫn là bản VisDrone đã được kiểm chứng.";return health;}
-  const names={verifying:"Đang kiểm tra checksum dữ liệu",waiting_gpu:"Đang chờ GPU trống ít nhất 4 GB VRAM",training:"Đang huấn luyện trên GPU tại máy",evaluating:"Đang đánh giá mô hình",completed:"Huấn luyện và đánh giá đã hoàn tất",error:"Phiên huấn luyện gặp lỗi"};
-  $("trainingStatus").textContent=`${names[training.status]||training.status} · ${training.train_images||0} ảnh train · epoch ${training.epoch||0}/${training.epochs||0} · ${training.device||"GPU"}${training.status==="completed"?(training.accepted?" · Mô hình mới đã qua tiêu chí nghiệm thu.":" · Giữ mô hình cũ vì ứng viên chưa đạt tiêu chí."):""}${training.error?" · "+training.error:""}`;
+  const names={verifying:"Đang kiểm tra checksum dữ liệu",waiting_gpu:"Đang chờ GPU trống ít nhất 4 GB VRAM",preparing_train:"Đang khởi tạo mô hình và đọc nhãn train",training:"Đang huấn luyện trên GPU tại máy",evaluating:"Đang đánh giá mô hình",completed:"Huấn luyện và đánh giá đã hoàn tất",error:"Phiên huấn luyện gặp lỗi"};
+  const detail=training.status==="verifying"?` · ${training.verified_images||0}/${training.dataset_images||107993} ảnh đã kiểm`:training.status==="training"?` · epoch ${training.current_epoch||training.epoch||0}/${training.epochs||0} · batch ${training.batch||0}/${training.batches||0}`:training.status==="evaluating"?` · ${training.evaluation_source||"baseline"}/${training.evaluation_split||"val"} · batch ${training.batch||0}/${training.batches||0}`:"";
+  $("trainingStatus").textContent=`${names[training.status]||training.status}${detail} · ${training.train_images||0} ảnh train · ${training.device||"GPU"}${training.status==="completed"?(training.accepted?" · Mô hình mới đã qua tiêu chí nghiệm thu.":" · Giữ mô hình cũ vì ứng viên chưa đạt tiêu chí."):""}${training.error?" · "+training.error:""}`;
   return health;
 }
 setInterval(()=>guarded(trainingStatus)(),15000);
-guarded(async()=>{const health=await trainingStatus();if(health.recommended_model)$("modelKey").value=health.recommended_model;if(health.training&&["verifying","waiting_gpu","training","evaluating"].includes(health.training.status))$("device").value="cpu";await loadSources();await loadSource();if(health.active_job){jobId=health.active_job;job=await api(`/api/jobs/${jobId}`);allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));renderEvents();await poll();}})();
+guarded(async()=>{const health=await trainingStatus();if(health.recommended_model)$("modelKey").value=health.recommended_model;if(health.training&&["verifying","waiting_gpu","preparing_train","training","evaluating"].includes(health.training.status))$("device").value="cpu";await loadSources();await loadSource();if(health.active_job){jobId=health.active_job;job=await api(`/api/jobs/${jobId}`);allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));renderEvents();await poll();}})();
