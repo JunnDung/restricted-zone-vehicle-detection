@@ -31,7 +31,7 @@ Khi GPU đang train, **Tự động** dùng CPU cho giám sát; chọn GPU trự
 
 ## Huấn luyện dataset lớn tại máy, không mất phí cloud
 
-Đã bổ sung pipeline dữ liệu **MIO-TCD Localization + VisDrone DET**, không nhầm với tập classification của MIO. MIO Localization tổng cộng 137.743 ảnh; chỉ phần train có ground truth được dùng và chia thành train/val/test nội bộ. Phần test chính thức không có nhãn không được dùng làm phép đo giả. Số lượng sau loại trùng, phân bố lớp, hash và nguồn tải ở `reports/large-dataset.json` khi chuyển đổi hoàn tất.
+Đã chuẩn bị **MIO-TCD Localization + VisDrone DET**: **81.923 ảnh train, 12.637 validation, 13.433 test**, tổng 107.993 ảnh sau khi bỏ 10.636 bản trùng hệt. Số ảnh train gấp khoảng 12,7 lần tập VisDrone ban đầu. MIO Localization tổng cộng 137.743 ảnh; chỉ phần train có ground truth được dùng và chia thành train/val/test nội bộ. Phần test chính thức không có nhãn không được dùng làm phép đo giả. Phân bố lớp, hash và nguồn tải ở `reports/large-dataset.json`.
 
 ```powershell
 # Cài CUDA nếu chưa có; chuẩn bị VisDrone ở data/vehicles.

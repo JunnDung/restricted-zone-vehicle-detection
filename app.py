@@ -99,6 +99,8 @@ class Manager:
         except Exception as exc:
             job.update(status="error", error=str(exc), event_count=len(self.store.events(job["id"])))
         finally:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
             job["finished"] = datetime.now(timezone.utc).isoformat()
             self.store.save_job(job)
             with self.lock:
