@@ -195,15 +195,22 @@ def source_preview(source_id: str):
     return FileResponse(path)
 
 
+def map_path(source_id):
+    manager.source(source_id)
+    folder = RUNTIME / "maps"
+    folder.mkdir(exist_ok=True)
+    return folder / (source_id.replace(":", "-") + ".json")
+
+
 @app.get("/api/map")
-def get_map():
-    path = RUNTIME / "zones.json"
+def get_map(source_id: str = "parking"):
+    path = map_path(source_id)
     return json.loads((path if path.exists() else ROOT / "config/parking.json").read_text(encoding="utf-8"))
 
 
 @app.put("/api/map")
-def save_map(zone_map: ZoneMap):
-    atomic_json(RUNTIME / "zones.json",zone_map.model_dump())
+def save_map(zone_map: ZoneMap, source_id: str = "parking"):
+    atomic_json(map_path(source_id),zone_map.model_dump())
     return zone_map
 
 
