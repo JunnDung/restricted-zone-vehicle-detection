@@ -115,7 +115,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
     writer = None
     raw = output / "raw.mp4"
     start, last_progress = time.monotonic(), 0.0
-    frames, inference = 0, 0.0
+    frames, inference, video_seconds = 0, 0.0, 0.0
     status = {"metadata": metadata, "device": device, "model": weights.name, "model_sha256": sha256(weights), "progress": 0, "event_count": 0, "phase": "detecting"}
     stopped = False
     try:
@@ -183,6 +183,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
                     on_event(event)
             writer.write(cv2.resize(canvas, size))
             frames += 1
+            video_seconds = seconds if live else frames / metadata["fps"]
             if time.monotonic()-last_progress >= .5:
                 last_progress = time.monotonic()
                 ok_jpg, jpeg = cv2.imencode(".jpg", canvas)
@@ -213,6 +214,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
         export.writerows({k: "'"+v if isinstance(v,str) and v.startswith(("=","+","-","@")) else v for k,v in event.items()} for event in events)
     elapsed = time.monotonic()-start
     status.update(phase="stopped" if stopped else "completed", progress=1, processed_frames=frames, event_count=len(events),
+                  video_seconds=round(video_seconds,3), active_count=0,
                   elapsed_seconds=round(elapsed,2), processing_fps=round(frames/elapsed,2), inference_ms=round(1000*inference/max(1,frames),2),
                   source_sha256=None if live else sha256(source), events=events, settings=settings,
                   video_timing="constant FPS source" if not live else "camera output is encoded at nominal FPS; event times use monotonic elapsed time")

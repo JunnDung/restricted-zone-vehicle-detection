@@ -9,3 +9,4 @@ data/raw/
 data/vehicles/
 .env
 reports/training-live.json
+/yolo*.pt

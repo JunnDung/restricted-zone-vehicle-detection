@@ -64,6 +64,13 @@ class Manager:
 
     def start(self, settings):
         name, source = self.source(settings.source_id)
+        live_path = ROOT / "reports/training-live.json"
+        training = json.loads(live_path.read_text(encoding="utf-8")) if live_path.exists() else {}
+        if training.get("status") in ("verifying","training","evaluating"):
+            if settings.device == "0":
+                raise HTTPException(409,"GPU đang huấn luyện. Chọn CPU để phân tích hoặc chờ train hoàn tất.")
+            if settings.device == "auto":
+                settings = settings.model_copy(update={"device":"cpu"})
         with self.lock:
             if self.active:
                 raise HTTPException(409, "Đang xử lý một phiên. Hãy dừng hoặc chờ hoàn tất.")

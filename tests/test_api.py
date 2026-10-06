@@ -85,6 +85,24 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(restarted.job("pending")["status"],"error")
         self.assertEqual(restarted.events("pending"),[event])
 
+    def test_training_reserves_gpu_and_auto_uses_cpu(self):
+        root=Path(self.temp.name)/"training-test"
+        (root/"reports").mkdir(parents=True)
+        (root/"reports/training-live.json").write_text('{"status":"training"}')
+        def fake_analyze(source, output, zone_map, **kwargs):
+            self.assertEqual(kwargs["device"],"cpu")
+            return {"phase":"completed","event_count":0,"progress":1}
+        with patch.object(self.module,"ROOT",root), patch.object(self.module,"analyze",side_effect=fake_analyze):
+            request={"source_id":"parking","zone_map":self.map,"device":"0"}
+            self.assertEqual(self.client.post("/api/jobs",json=request).status_code,409)
+            request["device"]="auto"
+            response=self.client.post("/api/jobs",json=request)
+            self.assertEqual(response.status_code,201)
+            self.module.manager.thread.join(3)
+            job=self.client.get("/api/jobs/"+response.json()["id"]).json()
+            self.assertEqual(job["request"]["device"],"cpu")
+            self.assertEqual(job["status"],"completed")
+
 
 if __name__ == "__main__":
     unittest.main()

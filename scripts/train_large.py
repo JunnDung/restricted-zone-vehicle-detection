@@ -9,6 +9,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+os.environ["YOLO_VERBOSE"]="False"
 import torch
 from ultralytics import YOLO
 
@@ -78,6 +79,7 @@ def main():
     def epoch_end(trainer):
         state.update(epoch=trainer.epoch+1,epochs=trainer.epochs,status="training",metrics={k:float(v) for k,v in trainer.metrics.items()},updated_utc=datetime.now(timezone.utc).isoformat())
         atomic_json(live,state)
+        print(json.dumps({"epoch":state["epoch"],"epochs":state["epochs"],"metrics":state["metrics"]}),flush=True)
     model=YOLO(str(run/"weights/last.pt") if args.resume else str(ROOT/"models/yolo11s.pt"))
     model.add_callback("on_fit_epoch_end",epoch_end)
     started=time.monotonic()
