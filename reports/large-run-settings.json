@@ -1,0 +1,7 @@
+{
+  "dataset_manifest_sha256": "f6e09ac10285f838593d4631ce0baaa6a02442d20c852abcbb8563524eaca2c8",
+  "epochs": 30,
+  "batch": 8,
+  "imgsz": 640,
+  "seed": 42
+}

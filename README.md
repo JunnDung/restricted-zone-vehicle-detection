@@ -4,6 +4,8 @@
 
 Đề tài: **Xây dựng hệ thống phát hiện phương tiện đi vào khu vực cấm**. Sản phẩm gồm checkpoint AI dùng được ngay, trình vẽ vùng cấm theo góc camera và cảnh báo kèm bằng chứng. Mã nguồn được lưu theo từng phần tại [GitHub](https://github.com/JunnDung/restricted-zone-vehicle-detection).
 
+![Dashboard ZoneGuard đã chạy hết video mẫu](reports/dashboard.png)
+
 ## Chạy tại Windows
 
 Máy hiện tại đã có môi trường CUDA tại `.venv`. Nhấp `run.cmd`, mở **http://127.0.0.1:8003**. Server dùng một nguồn và một tiến trình; giữ cửa sổ server khi sử dụng.
@@ -42,7 +44,7 @@ Khi GPU đang train, **Tự động** dùng CPU cho giám sát; chọn GPU trự
 powershell -ExecutionPolicy Bypass -File start-training.ps1
 ```
 
-Máy hiện tại đã có VisDrone và gói MIO tải đủ; không cần chạy lại chuẩn bị khi `datasets/large/manifest.json` tồn tại. 30 epoch trên dữ liệu lớn có thể kéo dài nhiều giờ hoặc hơn một ngày, tùy tốc độ thực tế; chưa có ETA đáng tin trước epoch đầu. Máy cần tiếp tục hoạt động. Checkpoint `runs/zoneguard_large/weights/last.pt` được lưu mỗi epoch; sau khi gián đoạn:
+Máy hiện tại đã có VisDrone và gói MIO tải đủ; không cần chạy lại chuẩn bị khi `datasets/large/manifest.json` tồn tại. 30 epoch trên dữ liệu lớn có thể kéo dài nhiều giờ hoặc hơn một ngày, tùy tốc độ thực tế; chưa có ETA đáng tin trước epoch đầu. Máy cần tiếp tục hoạt động. Checkpoint `runs/zoneguard_large/weights/last.pt` được lưu mỗi epoch; sau khi đã có checkpoint này, có thể tiếp tục phiên bị gián đoạn:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File start-training.ps1 -Resume
@@ -65,7 +67,7 @@ Dataset được chia theo nhóm ID, giữ split chính thức VisDrone, loại 
 | YOLO11n/YOLO11s COCO trên cùng video | 0 cảnh báo |
 | Dashboard | Vẽ ROI, lịch sử, ảnh bằng chứng, phát MP4/H.264, bố cục desktop/mobile được kiểm tra trong trình duyệt |
 
-Nguồn số đo: `reports/upstream-training.json`, `reports/model-comparison.json`, `reports/parking-reference.json`. Mốc video được gán tay với cửa sổ thời gian, chỉ gồm hai lượt và đã dùng hiệu chỉnh; F1 trên đó không thể suy rộng thành độ chính xác thực địa. FPS ban đầu có tiến trình dashboard chạy đồng thời nên chỉ tham khảo, chưa phải benchmark phần cứng có kiểm soát. Mô hình train lớn chưa được coi là cải thiện cho đến khi có báo cáo cuối và `accepted: true`.
+Nguồn số đo: `reports/upstream-training.json`, `reports/model-comparison.json`, `reports/parking-reference.json`, `reports/system-validation.json`. Mốc video được gán tay với cửa sổ thời gian, chỉ gồm hai lượt và đã dùng hiệu chỉnh; F1 trên đó không thể suy rộng thành độ chính xác thực địa. FPS ban đầu có tiến trình dashboard chạy đồng thời nên chỉ tham khảo, chưa phải benchmark phần cứng có kiểm soát. Mô hình train lớn chưa được coi là cải thiện cho đến khi có báo cáo cuối và `accepted: true`.
 
 Camera USB có đường chạy và thông báo lỗi thiết bị, chưa được kiểm chứng bằng camera vật lý trong đợt bàn giao này. Ban đêm, camera rung, xe bị che và ID đổi vẫn là hạn chế. Không có nhận diện biển số, nhiều camera đồng thời hoặc RTSP trong phiên bản này.
 
