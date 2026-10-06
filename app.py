@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from pipeline import ROOT, analyze, atomic_json, inspect_video
+from pipeline import ROOT, MODELS, analyze, atomic_json, inspect_video
 from store import Store
 from zones import LABELS, ZoneMap
 
@@ -31,7 +31,7 @@ class JobRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     source_id: str = Field(pattern=r"^(parking|street|camera:[0-5]|[a-f0-9]{32})$")
     zone_map: ZoneMap
-    model_key: Literal["vehicle", "coco"] = "vehicle"
+    model_key: Literal["vehicle", "coco", "quality", "large"] = "vehicle"
     confidence: float = Field(default=.3, ge=.05, le=.9)
     imgsz: Literal[640, 960] = 640
     device: Literal["auto", "cpu", "0"] = "auto"
@@ -127,8 +127,11 @@ async def local_origin(request: Request, call_next):
 
 @app.get("/api/health")
 def health():
+    training_path = ROOT / "reports/training-live.json"
+    training = json.loads(training_path.read_text(encoding="utf-8")) if training_path.exists() else None
     return {"ok": True, "cuda": torch.cuda.is_available(), "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
-            "active_job": manager.active, "labels": LABELS, "version": "1.0.0"}
+            "active_job": manager.active, "labels": LABELS, "version": "1.0.0", "training": training,
+            "recommended_model": "large" if MODELS["large"].exists() else "vehicle", "available_models": [key for key,path in MODELS.items() if path.exists()]}
 
 
 @app.get("/api/sources")

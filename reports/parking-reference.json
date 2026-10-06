@@ -1,0 +1,11 @@
+{
+  "source": "data/samples/car-detection.mp4",
+  "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+  "zone_map": "config/parking.json",
+  "annotation_method": "Manual review of original video frames with ROI overlay at 0.4-second intervals. Two physical vehicles (first white car, red car) have bottom-center points inside the polygon long enough; second gray car and final white car stay to the left. Confirmation windows are coarse due to manually estimated bbox/entry timing.",
+  "use": "Small admission/calibration video, not an independent accuracy benchmark. AI outputs were not used as ground-truth class labels.",
+  "events": [
+    {"vehicle": "first-white-car", "class": "car", "zone_id": "gate", "min_seconds": 6.0, "max_seconds": 7.5},
+    {"vehicle": "red-car", "class": "car", "zone_id": "gate", "min_seconds": 16.2, "max_seconds": 18.2}
+  ]
+}

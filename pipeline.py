@@ -23,7 +23,7 @@ from zones import CLASSES, IntrusionEngine, ZoneMap
 
 ROOT = Path(__file__).resolve().parent
 COCO_MAP = {3: "motorcycle", 2: "car", 7: "truck", 5: "bus", 1: "other"}
-MODELS = {"vehicle": ROOT / "models/vehicle-yolo11n.pt", "coco": ROOT / "models/yolo11n.pt"}
+MODELS = {"vehicle": ROOT / "models/vehicle-yolo11n.pt", "coco": ROOT / "models/yolo11n.pt", "quality": ROOT / "models/yolo11s.pt", "large": ROOT / "models/vehicle-large.pt"}
 
 
 def atomic_json(path, data):
@@ -81,7 +81,7 @@ def draw(frame, zone_map, detections, active, seconds, count):
     return canvas
 
 
-def analyze(source, output, zone_map, *, model_key="vehicle", confidence=.3, imgsz=640, device="auto", max_seconds=900, progress=None, on_event=None, stop=None):
+def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, confidence=.3, imgsz=640, device="auto", max_seconds=900, progress=None, on_event=None, stop=None):
     if model_key not in MODELS or not .05 <= confidence <= .9 or imgsz not in (640,960) or not 1 <= max_seconds <= 900:
         raise ValueError("Cấu hình phân tích không hợp lệ.")
     if device not in ("auto", "cpu", "0"):
@@ -93,7 +93,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", confidence=.3, img
         raise ValueError("Phiên đã tồn tại; chọn thư mục khác để tránh ghi đè.")
     live = isinstance(source, int)
     metadata = {"live": True} if live else inspect_video(source)[0]
-    weights = MODELS[model_key]
+    weights = Path(weights) if weights else MODELS[model_key]
     if not weights.is_file():
         raise ValueError("Thiếu trọng số trong models/.")
     settings = {"zone_map": zone_map.model_dump(), "model_key": model_key, "confidence": confidence, "imgsz": imgsz, "device": device, "max_seconds": max_seconds}

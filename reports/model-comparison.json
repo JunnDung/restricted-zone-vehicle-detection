@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-06",
+  "source": "data/samples/car-detection.mp4",
+  "settings": {
+    "confidence": 0.3,
+    "imgsz": 640,
+    "zone_map": "config/parking.json"
+  },
+  "models": [
+    {
+      "model": "yolo11n.pt",
+      "event_count": 0,
+      "processing_fps": 25.78,
+      "inference_ms": 30.86,
+      "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+      "model_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+      "events": []
+    },
+    {
+      "model": "yolo11s.pt",
+      "event_count": 0,
+      "processing_fps": 29.5,
+      "inference_ms": 26.65,
+      "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+      "model_sha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+      "events": []
+    },
+    {
+      "model": "vehicle-yolo11n.pt",
+      "event_count": 2,
+      "processing_fps": 21.24,
+      "inference_ms": 34.27,
+      "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+      "model_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+      "events": [
+        {
+          "track_id": 2,
+          "class": "car",
+          "confidence": 0.534,
+          "zone_id": "gate",
+          "zone_name": "Lối vào hạn chế",
+          "severity": "high",
+          "entered_seconds": 6.16,
+          "confirmed_seconds": 6.56,
+          "kind": "entry",
+          "point": [
+            0.4566902816295624,
+            0.7231827488651982
+          ],
+          "id": "a69333ece6b1413e88456569f089355a",
+          "analyzed_utc": "2026-10-06T14:32:37.013192+00:00",
+          "frame_index": 82,
+          "evidence": "evidence/a69333ece6b1413e88456569f089355a.jpg"
+        },
+        {
+          "track_id": 8,
+          "class": "truck",
+          "confidence": 0.8488,
+          "zone_id": "gate",
+          "zone_name": "Lối vào hạn chế",
+          "severity": "high",
+          "entered_seconds": 16.72,
+          "confirmed_seconds": 17.12,
+          "kind": "entry",
+          "point": [
+            0.5077919661998749,
+            0.7227707615605107
+          ],
+          "id": "2a3d2c733eb14affad4ce670a2043eb2",
+          "analyzed_utc": "2026-10-06T14:32:41.581827+00:00",
+          "frame_index": 214,
+          "evidence": "evidence/2a3d2c733eb14affad4ce670a2043eb2.jpg"
+        }
+      ]
+    }
+  ],
+  "note": "Initial run timing included overlap with a dashboard run; FPS is indicative, not a controlled hardware benchmark. Ground-truth has two intrusions. The VisDrone detector catches both but mislabels the red car as truck; COCO models recognize a top-down car as cell phone."
+}
