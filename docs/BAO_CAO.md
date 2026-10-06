@@ -16,7 +16,7 @@ flowchart LR
     F --> G[CSV / JSON / MP4]
 ```
 
-YOLO tạo hộp bao/lớp/điểm tin cậy mỗi khung. ByteTrack duy trì định danh, dùng cả detection điểm thấp để nối xe tạm bị che. Mỗi phiên tạo model và tracker riêng để không mang track từ camera trước. Nhãn một track được ổn định bằng tổng phiếu tin cậy; nhãn ổn định vẫn có thể sai nếu detector liên tục nhầm.
+YOLO tạo hộp bao/lớp/điểm tin cậy mỗi khung. ByteTrack duy trì định danh, dùng cả detection điểm thấp để nối xe tạm bị che. Chỉ detection đủ ngưỡng người dùng được tích lũy để xác nhận vi phạm; detection yếu đặt lại chuỗi chưa xác nhận. Mỗi phiên tạo model và tracker riêng để không mang track từ camera trước. Nhãn một track được ổn định bằng tổng phiếu tin cậy; nhãn ổn định vẫn có thể sai nếu detector liên tục nhầm.
 
 Điểm xét vùng là giữa cạnh đáy hộp bao, chuẩn hóa theo kích thước ảnh. OpenCV trả khoảng cách có dấu từ điểm tới đa giác; khoảng đệm tách ngưỡng vào/ra làm giảm rung ở biên. Xác nhận khi đồng thời đạt thời gian dwell và số quan sát min_frames. Mất detection quá một giây đặt lại chuỗi xác nhận. Sau cảnh báo phải ra ngoài đủ thời gian mới tái cảnh báo; đổi lớp xe khi đang ở trong không được mở lượt mới. Các vùng được xử lý độc lập, nên một xe có thể vi phạm hai vùng.
 
@@ -45,7 +45,10 @@ Các báo cáo máy đọc được nằm trong `reports/`: upstream-training, u
 | Dữ liệu/nhãn thiếu nguồn gốc | Hash, mapping rõ, split có manifest, baseline đối chứng | Split MIO chưa chứng minh camera độc lập |
 | GPU laptop bị chia sẻ quá mức | Một phiên giám sát, CPU khi GPU train, AMP batch 8 | CPU có thể không đạt thời gian thực |
 | Mất lịch sử khi restart | SQLite WAL và phục hồi phiên bị gián đoạn | Chỉ lưu tại một máy; chưa có HA/backup runtime tự động |
-| Khó rà soát kết quả | Ảnh bằng chứng, overlay MP4/H.264, CSV/JSON | Chưa có video clip riêng quanh từng cảnh báo |
+| Khó rà soát kết quả | Ảnh bằng chứng, nút xem video từ hai giây trước cảnh báo, overlay MP4/H.264, CSV/JSON | Chưa có video clip riêng quanh từng cảnh báo |
+| Không biết train đang làm gì | Số ảnh xác minh, batch baseline và epoch/batch train, cập nhật khoảng 15 giây | Chưa có ETA đáng tin trước epoch đầu |
+
+Chi tiết đối chiếu nguồn nghiên cứu, lựa chọn cải tiến và kết quả kiểm chứng nằm trong [Tham khảo và cải tiến](THAM_KHAO_CAI_TIEN.md).
 
 ## Đánh giá trên camera triển khai
 

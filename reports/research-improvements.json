@@ -1,0 +1,226 @@
+{
+  "checked_utc": "2026-10-06T15:58:43.356132+00:00",
+  "unittest_count": 20,
+  "unittest_result": "passed",
+  "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+  "model_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+  "settings": {
+    "zone_map": {
+      "zones": [
+        {
+          "id": "gate",
+          "name": "Lối vào hạn chế",
+          "color": "#ff665e",
+          "points": [
+            [
+              0.38,
+              0.32
+            ],
+            [
+              0.68,
+              0.32
+            ],
+            [
+              0.78,
+              0.95
+            ],
+            [
+              0.25,
+              0.95
+            ]
+          ],
+          "classes": [
+            "motorcycle",
+            "car",
+            "truck",
+            "bus",
+            "other"
+          ],
+          "dwell_seconds": 0.4,
+          "min_frames": 3,
+          "exit_seconds": 0.6,
+          "margin": 0.006,
+          "alert_initial": true,
+          "severity": "high"
+        }
+      ]
+    },
+    "model_key": "vehicle",
+    "confidence": 0.3,
+    "imgsz": 640,
+    "device": "cpu",
+    "max_seconds": 31
+  },
+  "video_regression": {
+    "processed_frames": 377,
+    "before_events": [
+      {
+        "class": "car",
+        "zone_id": "gate",
+        "entered_seconds": 6.16,
+        "confirmed_seconds": 6.56,
+        "frame_index": 82
+      },
+      {
+        "class": "truck",
+        "zone_id": "gate",
+        "entered_seconds": 16.72,
+        "confirmed_seconds": 17.12,
+        "frame_index": 214
+      }
+    ],
+    "after_events": [
+      {
+        "class": "car",
+        "zone_id": "gate",
+        "entered_seconds": 6.16,
+        "confirmed_seconds": 6.56,
+        "frame_index": 82
+      },
+      {
+        "class": "truck",
+        "zone_id": "gate",
+        "entered_seconds": 16.72,
+        "confirmed_seconds": 17.12,
+        "frame_index": 214
+      }
+    ],
+    "before_metrics": {
+      "class_aware": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5
+      },
+      "alert_only": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "after_metrics": {
+      "class_aware": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5
+      },
+      "alert_only": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "device": "cpu",
+    "processing_fps": 3.56,
+    "limitation": "Two manually reviewed calibration events; not an independent accuracy benchmark. CPU timing under concurrent disk/GPU activity is not a controlled hardware benchmark. Red car remains misclassified as truck."
+  },
+  "browser_review": {
+    "job_id": "fc7729e31c6f457db3f78af0ff0d875a",
+    "event_seconds": 6.56,
+    "expected_seek_seconds": 4.56,
+    "observed_seek_seconds": 4.56,
+    "duration_seconds": 30.16,
+    "video_width": 768,
+    "video_height": 432,
+    "decoded_ready_state": 4,
+    "screenshot": "reports/review-evidence.png"
+  },
+  "training_snapshot": {
+    "status": "preparing_train",
+    "started_utc": "2026-10-06T15:34:01.036260+00:00",
+    "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "epochs": 30,
+    "epoch": 0,
+    "dataset_manifest_sha256": "f6e09ac10285f838593d4631ce0baaa6a02442d20c852abcbb8563524eaca2c8",
+    "train_images": 81923,
+    "verified_images": 107993,
+    "dataset_images": 107993,
+    "updated_utc": "2026-10-06T15:53:16.101839+00:00",
+    "evaluation_source": "visdrone",
+    "evaluation_split": "val",
+    "batch": 0,
+    "batches": 0
+  },
+  "training_note": "Snapshot only. The live status and logs remain local; model accuracy must be assessed after training completes.",
+  "research": "docs/THAM_KHAO_CAI_TIEN.md",
+  "baseline_validation_report": "reports/large-baseline-validation.json",
+  "baseline_validation": {
+    "mio": {
+      "precision": 0.19053615384952177,
+      "recall": 0.1599935107842027,
+      "mAP50": 0.11506363041135384,
+      "mAP50_95": 0.07345440570489217,
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.0042107634176449206,
+          "AP50_95": 0.0015468766430935313
+        },
+        {
+          "class": "car",
+          "AP50": 0.396472938718362,
+          "AP50_95": 0.25218263578623934
+        },
+        {
+          "class": "truck",
+          "AP50": 0.106929743776082,
+          "AP50_95": 0.06831791106084176
+        },
+        {
+          "class": "bus",
+          "AP50": 0.04878182092627073,
+          "AP50_95": 0.032745857614259036
+        },
+        {
+          "class": "other",
+          "AP50": 0.01892288521840961,
+          "AP50_95": 0.012478747420027258
+        }
+      ]
+    },
+    "visdrone": {
+      "precision": 0.5098630985086278,
+      "recall": 0.3933263280505737,
+      "mAP50": 0.4076271259571169,
+      "mAP50_95": 0.251038445180759,
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.33382678691077533,
+          "AP50_95": 0.1349198155821169
+        },
+        {
+          "class": "car",
+          "AP50": 0.7324982327186026,
+          "AP50_95": 0.49286760590434175
+        },
+        {
+          "class": "truck",
+          "AP50": 0.28293544451624353,
+          "AP50_95": 0.1822609985890872
+        },
+        {
+          "class": "bus",
+          "AP50": 0.4243011894639981,
+          "AP50_95": 0.28660015826289875
+        },
+        {
+          "class": "other",
+          "AP50": 0.26457397617596506,
+          "AP50_95": 0.15854364756535044
+        }
+      ]
+    }
+  }
+}

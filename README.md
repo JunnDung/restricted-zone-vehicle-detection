@@ -24,10 +24,10 @@ Bỏ `-Cuda` nếu dùng CPU. Có thể truyền `-Python C:\duong-dan\python.ex
 1. Chọn **Bãi xe · Intel**, video khác hoặc Camera USB (chỉ số 0–5). Video tối đa 500 MB, 15 phút, 54.000 khung và 4096 px mỗi chiều/9 megapixel.
 2. Kiểm tra đa giác trên mặt đường. **Thêm vùng**, click đỉnh theo thứ tự, Enter/Hoàn tất để kết thúc; kéo đỉnh để chỉnh; Escape để hủy. Tối đa 10 vùng, 3–32 đỉnh/vùng. Có thể nhập/xuất JSON.
 3. Chọn loại xe bị hạn chế, thời gian xác nhận, số lần phát hiện, vùng đệm biên và thời gian xác nhận ra ngoài. **Lưu bản đồ** lưu riêng cho nguồn đang chọn.
-4. Bấm **Bắt đầu giám sát**; chọn Âm báo để bật tiếng cảnh báo trong trình duyệt. Mở ảnh cảnh báo để rà soát.
+4. Bấm **Bắt đầu giám sát**; chọn Âm báo để bật tiếng cảnh báo trong trình duyệt. Mở ảnh cảnh báo để rà soát; sau phiên, **Xem diễn biến trước cảnh báo** mở video từ hai giây trước khung đó.
 5. Sau phiên tải CSV UTF-8, JSON, cấu hình và video MP4/H.264. Lịch sử và ảnh còn lại sau khi khởi động lại; cấu hình phiên là bản chụp độc lập với bản đồ sửa sau đó.
 
-Một cảnh báo cho mỗi cặp track/vùng/lượt. Xe phải xuất hiện liên tục đủ dwell và min_frames; mất quan sát hơn 1 giây không được cộng nối thời gian. Ra ngoài đủ exit_seconds mới cho cảnh báo lượt tiếp theo. Tùy chọn “Cảnh báo xe đã có…” tắt thì cần quan sát xe ở ngoài trước khi vào. Điểm giữa cạnh đáy bounding box xấp xỉ vị trí xe chạm đường; không xét đơn thuần góc hộp bao giao đa giác.
+Một cảnh báo cho mỗi cặp track/vùng/lượt. Xe phải xuất hiện liên tục đủ dwell và min_frames với detection đạt ngưỡng tin cậy; detection yếu vẫn được nối track nhưng đặt lại chuỗi chưa xác nhận. Mất quan sát hơn 1 giây không được cộng nối thời gian. Ra ngoài đủ exit_seconds mới cho cảnh báo lượt tiếp theo. Tùy chọn “Cảnh báo xe đã có…” tắt thì cần quan sát xe ở ngoài trước khi vào. Điểm giữa cạnh đáy bounding box xấp xỉ vị trí xe chạm đường; không xét đơn thuần góc hộp bao giao đa giác.
 
 Khi GPU đang train, **Tự động** dùng CPU cho giám sát; chọn GPU trực tiếp bị chặn để tránh hết VRAM. Có thể giảm kích thước AI/độ phân giải nguồn nếu CPU chậm. Bản đồ là ROI trong ảnh, chưa có tọa độ GIS; hệ thống cảnh báo cục bộ bằng giao diện/âm báo/nhật ký, không gửi email hay webhook.
 
@@ -50,7 +50,7 @@ Máy hiện tại đã có VisDrone và gói MIO tải đủ; không cần chạ
 powershell -ExecutionPolicy Bypass -File start-training.ps1 -Resume
 ```
 
-Xem **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Tiến độ epoch được cập nhật sau mỗi epoch. Nếu tác vụ khác đang giữ VRAM, train chờ ít nhất 4 GB trống và không dừng tiến trình đó. Có thể kiểm tra GPU bằng `nvidia-smi`. Giữ dữ liệu nguyên checksum khi resume. Không xóa run/checkpoint đang huấn luyện. Nếu train lỗi, xem log rồi resume sau khi xử lý nguyên nhân; không lấy checkpoint lỗi làm mô hình chính.
+Xem **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Tiến độ gồm số ảnh đã xác minh, batch đánh giá baseline và epoch/batch train; trong vòng lặp batch cập nhật khoảng mỗi 15 giây. Giai đoạn chuẩn bị dataloader được hiển thị riêng, chưa tính là batch training. Nếu tác vụ khác đang giữ VRAM, train chờ ít nhất 4 GB trống và không dừng tiến trình đó. Có thể kiểm tra GPU bằng `nvidia-smi`. Giữ dữ liệu nguyên checksum khi resume. Không xóa run/checkpoint đang huấn luyện. Nếu train lỗi, xem log rồi resume sau khi xử lý nguyên nhân; không lấy checkpoint lỗi làm mô hình chính.
 
 Dataset được chia theo nhóm ID, giữ split chính thức VisDrone, loại ảnh trùng chính xác giữa các split. Chưa chứng minh split MIO độc lập theo camera; cảnh gần giống vẫn có thể còn. Validation chọn checkpoint cân bằng hai nguồn; phép đo cuối dùng toàn bộ validation/test theo từng nguồn. YOLO11s mới chỉ xuất hiện trong dashboard sau khi đạt các tiêu chí chống suy giảm mô tả tại [MODEL_CARD](models/MODEL_CARD.md).
 
@@ -60,14 +60,14 @@ Dataset được chia theo nhóm ID, giữ split chính thức VisDrone, loại 
 
 | Kiểm tra | Kết quả |
 |---|---|
-| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU, ảnh preview và khóa tệp Windows | 18 kiểm thử unittest đạt |
+| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU, ảnh preview, khóa tệp Windows, hash và độ tin cậy xác nhận | 20 kiểm thử unittest đạt |
 | Checkpoint nguồn VisDrone 5 lớp, test-dev sau chuyển đổi | mAP50 37,54%; mAP50–95 22,24% |
 | Video bãi xe Intel, 377 khung, cấu hình mặc định | Hai cảnh báo tại 6,56 s và 17,12 s |
 | Phân loại hai cảnh báo | Xe trắng đúng car; xe đỏ bị nhầm truck |
 | YOLO11n/YOLO11s COCO trên cùng video | 0 cảnh báo |
 | Dashboard | Vẽ ROI, lịch sử, ảnh bằng chứng, phát MP4/H.264, bố cục desktop/mobile được kiểm tra trong trình duyệt |
 
-Nguồn số đo: `reports/upstream-training.json`, `reports/model-comparison.json`, `reports/parking-reference.json`, `reports/system-validation.json`. Mốc video được gán tay với cửa sổ thời gian, chỉ gồm hai lượt và đã dùng hiệu chỉnh; F1 trên đó không thể suy rộng thành độ chính xác thực địa. FPS ban đầu có tiến trình dashboard chạy đồng thời nên chỉ tham khảo, chưa phải benchmark phần cứng có kiểm soát. Mô hình train lớn chưa được coi là cải thiện cho đến khi có báo cáo cuối và `accepted: true`.
+Nguồn số đo: `reports/upstream-training.json`, `reports/model-comparison.json`, `reports/parking-reference.json`, `reports/system-validation.json` (snapshot kiểm tra ban đầu) và `reports/research-improvements.json` (đợt cải tiến sau tra cứu). Mốc video được gán tay với cửa sổ thời gian, chỉ gồm hai lượt và đã dùng hiệu chỉnh; F1 trên đó không thể suy rộng thành độ chính xác thực địa. FPS ban đầu có tiến trình dashboard chạy đồng thời nên chỉ tham khảo, chưa phải benchmark phần cứng có kiểm soát. Mô hình train lớn chưa được coi là cải thiện cho đến khi có báo cáo cuối và `accepted: true`.
 
 Camera USB có đường chạy và thông báo lỗi thiết bị, chưa được kiểm chứng bằng camera vật lý trong đợt bàn giao này. Ban đêm, camera rung, xe bị che và ID đổi vẫn là hạn chế. Không có nhận diện biển số, nhiều camera đồng thời hoặc RTSP trong phiên bản này.
 
@@ -94,6 +94,7 @@ Mỗi lần CLI cần output mới để không ghi đè phiên cũ. API docs �
 | runtime/ | Video tải lên, bản đồ từng nguồn, phiên, bằng chứng, log (không commit) |
 | datasets/large/ / runs/ | Dataset manifest và checkpoint training (không commit) |
 | docs/BAO_CAO.md | Mô tả phương pháp và kế hoạch đánh giá thực địa |
+| docs/THAM_KHAO_CAI_TIEN.md | Đối chiếu cách làm từ nghiên cứu, thay đổi đã áp dụng và giới hạn |
 
 ## Tham khảo và ghi công
 
