@@ -66,6 +66,12 @@ def main():
             raise ValueError("Stale dataset content: "+item["image"])
         if i%10000==0:
             print(f"Verified {i}/{len(manifest['files'])} files",flush=True)
+    # A second project can occupy the same laptop GPU; keep its process intact.
+    while torch.cuda.mem_get_info()[0] < 4*1024**3:
+        state.update(status="waiting_gpu",free_vram_mb=round(torch.cuda.mem_get_info()[0]/1024**2))
+        atomic_json(live,state)
+        time.sleep(10)
+    state["status"]="evaluating";atomic_json(live,state)
     baseline_report=ROOT/"reports/large-baseline-validation.json"
     def evaluate(weights,source,split,name):
         return metrics_dict(YOLO(str(weights)).val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=0,

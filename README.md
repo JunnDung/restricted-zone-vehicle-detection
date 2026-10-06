@@ -48,7 +48,7 @@ Máy hiện tại đã có VisDrone và gói MIO tải đủ; không cần chạ
 powershell -ExecutionPolicy Bypass -File start-training.ps1 -Resume
 ```
 
-Xem **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Tiến độ epoch được cập nhật sau mỗi epoch. Có thể kiểm tra GPU bằng `nvidia-smi`. Giữ dữ liệu nguyên checksum khi resume. Không xóa run/checkpoint đang huấn luyện. Nếu train lỗi, xem log rồi resume sau khi xử lý nguyên nhân; không lấy checkpoint lỗi làm mô hình chính.
+Xem **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Tiến độ epoch được cập nhật sau mỗi epoch. Nếu tác vụ khác đang giữ VRAM, train chờ ít nhất 4 GB trống và không dừng tiến trình đó. Có thể kiểm tra GPU bằng `nvidia-smi`. Giữ dữ liệu nguyên checksum khi resume. Không xóa run/checkpoint đang huấn luyện. Nếu train lỗi, xem log rồi resume sau khi xử lý nguyên nhân; không lấy checkpoint lỗi làm mô hình chính.
 
 Dataset được chia theo nhóm ID, giữ split chính thức VisDrone, loại ảnh trùng chính xác giữa các split. Chưa chứng minh split MIO độc lập theo camera; cảnh gần giống vẫn có thể còn. Validation chọn checkpoint cân bằng hai nguồn; phép đo cuối dùng toàn bộ validation/test theo từng nguồn. YOLO11s mới chỉ xuất hiện trong dashboard sau khi đạt các tiêu chí chống suy giảm mô tả tại [MODEL_CARD](models/MODEL_CARD.md).
 

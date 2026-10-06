@@ -159,12 +159,12 @@ async function loadHistory() {
 $("refreshHistory").onclick=guarded(loadHistory);
 async function trainingStatus() {
   const health=await api("/api/health"),training=health.training;
-  $("hardware").textContent=training&&["verifying","training","evaluating"].includes(training.status)?"CPU giám sát · GPU đang huấn luyện":health.device_name;
+  $("hardware").textContent=training&&["verifying","waiting_gpu","training","evaluating"].includes(training.status)?"CPU giám sát · GPU dành cho train":health.device_name;
   if(health.available_models?.includes("large")&&!document.querySelector('#modelKey option[value="large"]'))$("modelKey").prepend(option("large","YOLO11s · MIO-TCD + VisDrone (đã nghiệm thu)"));
   if(!training){$("trainingStatus").textContent="Chưa khởi chạy. Quy trình GPU tại máy: scripts/prepare_large.py → scripts/train_large.py. Checkpoint đang dùng vẫn là bản VisDrone đã được kiểm chứng.";return health;}
-  const names={verifying:"Đang kiểm tra checksum dữ liệu",training:"Đang huấn luyện trên GPU tại máy",evaluating:"Đang đánh giá mô hình",completed:"Huấn luyện và đánh giá đã hoàn tất",error:"Phiên huấn luyện gặp lỗi"};
+  const names={verifying:"Đang kiểm tra checksum dữ liệu",waiting_gpu:"Đang chờ GPU trống ít nhất 4 GB VRAM",training:"Đang huấn luyện trên GPU tại máy",evaluating:"Đang đánh giá mô hình",completed:"Huấn luyện và đánh giá đã hoàn tất",error:"Phiên huấn luyện gặp lỗi"};
   $("trainingStatus").textContent=`${names[training.status]||training.status} · ${training.train_images||0} ảnh train · epoch ${training.epoch||0}/${training.epochs||0} · ${training.device||"GPU"}${training.status==="completed"?(training.accepted?" · Mô hình mới đã qua tiêu chí nghiệm thu.":" · Giữ mô hình cũ vì ứng viên chưa đạt tiêu chí."):""}${training.error?" · "+training.error:""}`;
   return health;
 }
 setInterval(()=>guarded(trainingStatus)(),15000);
-guarded(async()=>{const health=await trainingStatus();if(health.recommended_model)$("modelKey").value=health.recommended_model;if(health.training&&["verifying","training","evaluating"].includes(health.training.status))$("device").value="cpu";await loadSources();await loadSource();if(health.active_job){jobId=health.active_job;job=await api(`/api/jobs/${jobId}`);allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));renderEvents();await poll();}})();
+guarded(async()=>{const health=await trainingStatus();if(health.recommended_model)$("modelKey").value=health.recommended_model;if(health.training&&["verifying","waiting_gpu","training","evaluating"].includes(health.training.status))$("device").value="cpu";await loadSources();await loadSource();if(health.active_job){jobId=health.active_job;job=await api(`/api/jobs/${jobId}`);allEvents=await api(`/api/jobs/${jobId}/events`);allEvents.forEach(e=>seen.add(e.id));renderEvents();await poll();}})();
