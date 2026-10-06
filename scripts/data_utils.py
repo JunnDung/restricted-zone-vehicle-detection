@@ -3,12 +3,28 @@ import hashlib
 import json
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
 def sha256(path):
     with Path(path).open("rb") as f:
         return hashlib.file_digest(f,"sha256").hexdigest()
+
+
+def verify_files(base, records, progress=None):
+    """Check every image and label; bound queued work to 1,000 records."""
+    base=Path(base)
+    def check(item):
+        for key in ("image","label"):
+            if sha256(base/item[key]) != item[key+"_sha256"]:
+                raise ValueError("Stale dataset content: "+item[key])
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for start in range(0,len(records),1000):
+            for _ in pool.map(check,records[start:start+1000]):
+                pass
+            if progress:
+                progress(min(start+1000,len(records)),len(records))
 
 
 def download(url, path):

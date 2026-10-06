@@ -13,7 +13,7 @@ os.environ["YOLO_VERBOSE"]="False"
 import torch
 from ultralytics import YOLO
 
-from data_utils import sha256
+from data_utils import sha256, verify_files
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
@@ -60,12 +60,19 @@ def main():
     state={"status":"verifying","started_utc":datetime.now(timezone.utc).isoformat(),"device":torch.cuda.get_device_name(0),"epochs":args.epochs,"epoch":0,
            "dataset_manifest_sha256":manifest_hash,"train_images":sum(n for k,n in manifest["usable_images"].items() if k.endswith("/train"))}
     atomic_json(live,state)
+    last_update=0.0
+    def publish(force=False):
+        nonlocal last_update
+        if force or time.monotonic()-last_update>=15:
+            last_update=time.monotonic()
+            state["updated_utc"]=datetime.now(timezone.utc).isoformat()
+            atomic_json(live,state)
+            print(json.dumps(state),flush=True)
     # Verify once before optimization. A changed image invalidates the experiment.
-    for i,item in enumerate(manifest["files"]):
-        if sha256(data/item["image"])!=item["image_sha256"] or sha256(data/item["label"])!=item["label_sha256"]:
-            raise ValueError("Stale dataset content: "+item["image"])
-        if i%10000==0:
-            print(f"Verified {i}/{len(manifest['files'])} files",flush=True)
+    def verified(done,total):
+        state.update(verified_images=done,dataset_images=total)
+        publish(True)
+    verify_files(data,manifest["files"],verified)
     # A second project can occupy the same laptop GPU; keep its process intact.
     while torch.cuda.mem_get_info()[0] < 4*1024**3:
         state.update(status="waiting_gpu",free_vram_mb=round(torch.cuda.mem_get_info()[0]/1024**2))
@@ -73,21 +80,41 @@ def main():
         time.sleep(10)
     state["status"]="evaluating";atomic_json(live,state)
     baseline_report=ROOT/"reports/large-baseline-validation.json"
+    def validation_callbacks(model,source,split):
+        def start(validator):
+            state.update(status="evaluating",evaluation_source=source,evaluation_split=split,batch=0,batches=len(validator.dataloader))
+            publish(True)
+        def batch(validator):
+            state["batch"]=validator.batch_i+1
+            publish(state["batch"]==1)
+        model.add_callback("on_val_start",start)
+        model.add_callback("on_val_batch_end",batch)
     def evaluate(weights,source,split,name):
-        return metrics_dict(YOLO(str(weights)).val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=0,
+        model=YOLO(str(weights))
+        validation_callbacks(model,source,split)
+        return metrics_dict(model.val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=0,
                                                 project=str(ROOT/"runs"),name=name,exist_ok=True,plots=False,verbose=False))
     if not args.resume:
         baseline={source:evaluate(ROOT/"models/vehicle-yolo11n.pt",source,"val","baseline_"+source+"_val") for source in ("mio","visdrone")}
         atomic_json(baseline_report,{"dataset_manifest_sha256":manifest_hash,"metrics":baseline})
     else:
         baseline=json.loads(baseline_report.read_text())["metrics"]
-    state["status"]="training";atomic_json(live,state)
+    state.update(status="preparing_train",batch=0,batches=0);publish(True)
+    def epoch_start(trainer):
+        state.update(status="training",current_epoch=trainer.epoch+1,batch=0,batches=len(trainer.train_loader))
+        publish(True)
+    def batch_end(trainer):
+        state["batch"]+=1
+        publish(state["batch"]==1)
     def epoch_end(trainer):
         state.update(epoch=trainer.epoch+1,epochs=trainer.epochs,status="training",metrics={k:float(v) for k,v in trainer.metrics.items()},updated_utc=datetime.now(timezone.utc).isoformat())
         atomic_json(live,state)
         print(json.dumps({"epoch":state["epoch"],"epochs":state["epochs"],"metrics":state["metrics"]}),flush=True)
     model=YOLO(str(run/"weights/last.pt") if args.resume else str(ROOT/"models/yolo11s.pt"))
+    model.add_callback("on_train_epoch_start",epoch_start)
+    model.add_callback("on_train_batch_end",batch_end)
     model.add_callback("on_fit_epoch_end",epoch_end)
+    validation_callbacks(model,"balanced","val")
     started=time.monotonic()
     if args.resume:
         model.train(resume=True,device="0",workers=0)
@@ -95,6 +122,7 @@ def main():
         model.train(data=str(data/"data.yaml"),epochs=args.epochs,batch=args.batch,imgsz=args.imgsz,device="0",workers=0,seed=42,deterministic=True,
                     project=str(ROOT/"runs"),name="zoneguard_large",exist_ok=True,patience=8,cache=False,amp=True,
                     mosaic=.5,close_mosaic=5,scale=.3,save_period=5)
+    training_seconds=time.monotonic()-started
     best=run/"weights/best.pt"
     state["status"]="evaluating";atomic_json(live,state)
     validation={source:evaluate(best,source,"val","large_"+source+"_val") for source in ("mio","visdrone")}
@@ -113,7 +141,7 @@ def main():
     accepted=accepted and all(video_scores["candidate"][metric]["f1"]>=video_scores["baseline"][metric]["f1"] for metric in ("class_aware","alert_only"))
     test={source:evaluate(best,source,"test","large_"+source+"_test") for source in ("mio","visdrone")}
     report={"architecture":"YOLO11s","trained_locally":True,"device":torch.cuda.get_device_name(0),"settings":run_settings,
-            "actual_epochs":state["epoch"],"elapsed_training_seconds":round(time.monotonic()-started,1),"dataset_manifest_sha256":manifest_hash,
+            "actual_epochs":state["epoch"],"elapsed_training_seconds":round(training_seconds,1),"elapsed_training_and_evaluation_seconds":round(time.monotonic()-started,1),"dataset_manifest_sha256":manifest_hash,
             "base_weights_sha256":sha256(ROOT/"models/yolo11s.pt"),"weights_sha256":sha256(best),"baseline_validation":baseline,
             "validation":validation,"test":test,"admission_video":video_scores,"accepted":accepted,"balanced_validation_mean_before":old_mean,"balanced_validation_mean_after":new_mean,
             "promotion_rule":"mean val mAP50-95 improves >0.005; VisDrone val does not fall more than 0.02; neither alert nor class-aware F1 regresses on the admission video. Selection made before test evaluation.",

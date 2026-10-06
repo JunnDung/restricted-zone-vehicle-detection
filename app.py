@@ -66,7 +66,7 @@ class Manager:
         name, source = self.source(settings.source_id)
         live_path = ROOT / "reports/training-live.json"
         training = json.loads(live_path.read_text(encoding="utf-8")) if live_path.exists() else {}
-        if training.get("status") in ("verifying","waiting_gpu","training","evaluating"):
+        if training.get("status") in ("verifying","waiting_gpu","preparing_train","training","evaluating"):
             if settings.device == "0":
                 raise HTTPException(409,"GPU đang huấn luyện. Chọn CPU để phân tích hoặc chờ train hoàn tất.")
             if settings.device == "auto":
