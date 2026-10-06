@@ -1,5 +1,5 @@
 {
-  "checked_utc": "2026-10-06T15:58:43.356132+00:00",
+  "checked_utc": "2026-10-06T16:01:54.169749+00:00",
   "unittest_count": 20,
   "unittest_result": "passed",
   "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
@@ -137,7 +137,7 @@
     "screenshot": "reports/review-evidence.png"
   },
   "training_snapshot": {
-    "status": "preparing_train",
+    "status": "training",
     "started_utc": "2026-10-06T15:34:01.036260+00:00",
     "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
     "epochs": 30,
@@ -146,13 +146,14 @@
     "train_images": 81923,
     "verified_images": 107993,
     "dataset_images": 107993,
-    "updated_utc": "2026-10-06T15:53:16.101839+00:00",
+    "updated_utc": "2026-10-06T16:01:44.698235+00:00",
     "evaluation_source": "visdrone",
     "evaluation_split": "val",
-    "batch": 0,
-    "batches": 0
+    "batch": 67,
+    "batches": 10241,
+    "current_epoch": 1
   },
-  "training_note": "Snapshot only. The live status and logs remain local; model accuracy must be assessed after training completes.",
+  "training_note": "Actual first-epoch batches completed on local CUDA. No full epoch or new-model accuracy result yet. Snapshot only; live status and logs continue locally.",
   "research": "docs/THAM_KHAO_CAI_TIEN.md",
   "baseline_validation_report": "reports/large-baseline-validation.json",
   "baseline_validation": {
@@ -222,5 +223,15 @@
         }
       ]
     }
-  }
+  },
+  "train_label_scan": {
+    "images": 81923,
+    "missing_labels": 0,
+    "empty_labels": 1166,
+    "corrupt": 0,
+    "cached_images": 81923,
+    "duplicate_label_warnings": 3,
+    "note": "One duplicate box was removed in memory in each of three VisDrone images; source images and label files remain unchanged."
+  },
+  "training_screenshot": "reports/training-start.png"
 }
