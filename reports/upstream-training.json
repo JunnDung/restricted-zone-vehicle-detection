@@ -1,0 +1,68 @@
+{
+  "architecture": "YOLO11n",
+  "trained_locally": true,
+  "base": "YOLO11n COCO",
+  "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "requested_epochs": 30,
+  "actual_epochs": 30,
+  "seed": 32,
+  "imgsz": 640,
+  "batch": 8,
+  "test_split": "official test-dev",
+  "elapsed_seconds_this_invocation": 4632.5,
+  "metrics": {
+    "metrics/precision(B)": 0.49756150556266804,
+    "metrics/recall(B)": 0.37839424580024994,
+    "metrics/mAP50(B)": 0.375398613973806,
+    "metrics/mAP50-95(B)": 0.22239409432904902,
+    "fitness": 0.22239409432904902
+  },
+  "speed_ms": {
+    "preprocess": 0.2554918633486862,
+    "inference": 5.1142613664574945,
+    "loss": 0.001378944105691398,
+    "postprocess": 2.398848198754422
+  },
+  "per_class": [
+    {
+      "class": "motorcycle",
+      "precision": 0.44772799975864863,
+      "recall": 0.2172797262617622,
+      "AP50": 0.21134036176241194,
+      "AP50_95": 0.07712178143958494
+    },
+    {
+      "class": "car",
+      "precision": 0.649108369188195,
+      "recall": 0.6319147760698517,
+      "AP50": 0.6393585479372865,
+      "AP50_95": 0.3869363233806479
+    },
+    {
+      "class": "truck",
+      "precision": 0.4072841858148065,
+      "recall": 0.31666039864610757,
+      "AP50": 0.3009961423425831,
+      "AP50_95": 0.18315742444760186
+    },
+    {
+      "class": "bus",
+      "precision": 0.6145918574107713,
+      "recall": 0.47312925170068026,
+      "AP50": 0.4870417720091876,
+      "AP50_95": 0.3244220452294887
+    },
+    {
+      "class": "other",
+      "precision": 0.3690951156409189,
+      "recall": 0.25298707632284806,
+      "AP50": 0.23825624581756066,
+      "AP50_95": 0.14033289714792183
+    }
+  ],
+  "weights_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+  "dataset_manifest_sha256": "f788e8bbca540407951745cbba7a27285eb624161d5abfd7987c8fa107c56df5",
+  "limitations": "Five remapped vehicle classes and masked ignored regions; not official VisDrone benchmark. Test mAP does not measure tracking/counting accuracy.",
+  "best_validation_epoch": 29,
+  "base_weights_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1"
+}

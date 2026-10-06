@@ -1,0 +1,20 @@
+[
+  {
+    "file": "car-detection.mp4",
+    "source": "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/57978890822836f2b4743852f04f62fc511757e4/car-detection.mp4",
+    "sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+    "author": "Intel Corporation / IoT DevKit sample-videos",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "Unchanged source video; analysis output adds annotations and removes audio."
+  },
+  {
+    "file": "person-bicycle-car-detection.mp4",
+    "source": "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/57978890822836f2b4743852f04f62fc511757e4/person-bicycle-car-detection.mp4",
+    "sha256": "452b11b7e0efbd019f1d9570d0c790e90416ad4ad29eec6003872d08443140ef",
+    "author": "Intel Corporation / IoT DevKit sample-videos",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "Unchanged source video; analysis output adds annotations and removes audio."
+  }
+]

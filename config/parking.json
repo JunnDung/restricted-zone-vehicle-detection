@@ -1,0 +1,9 @@
+{
+  "zones": [{
+    "id": "gate", "name": "Lối vào hạn chế", "color": "#ff665e",
+    "points": [[0.38,0.32],[0.68,0.32],[0.78,0.95],[0.25,0.95]],
+    "classes": ["motorcycle","car","truck","bus","other"],
+    "dwell_seconds": 0.4, "min_frames": 3, "exit_seconds": 0.6,
+    "margin": 0.006, "alert_initial": true, "severity": "high"
+  }]
+}
