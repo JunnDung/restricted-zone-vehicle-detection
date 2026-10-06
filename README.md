@@ -58,7 +58,7 @@ Dataset được chia theo nhóm ID, giữ split chính thức VisDrone, loại 
 
 | Kiểm tra | Kết quả |
 |---|---|
-| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU | 16 kiểm thử unittest đạt |
+| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU, ảnh preview và khóa tệp Windows | 18 kiểm thử unittest đạt |
 | Checkpoint nguồn VisDrone 5 lớp, test-dev sau chuyển đổi | mAP50 37,54%; mAP50–95 22,24% |
 | Video bãi xe Intel, 377 khung, cấu hình mặc định | Hai cảnh báo tại 6,56 s và 17,12 s |
 | Phân loại hai cảnh báo | Xe trắng đúng car; xe đỏ bị nhầm truck |

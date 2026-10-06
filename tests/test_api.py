@@ -103,6 +103,30 @@ class ApiTest(unittest.TestCase):
             self.assertEqual(job["request"]["device"],"cpu")
             self.assertEqual(job["status"],"completed")
 
+    def test_preview_is_a_snapshot_while_inference_replaces_file(self):
+        job_id="b"*32
+        self.module.manager.store.save_job({"id":job_id,"created":"2026-10-06","status":"completed"})
+        folder=Path(self.temp.name)/"jobs"/job_id;folder.mkdir()
+        path=folder/"preview.jpg";path.write_bytes(b"first-frame")
+        response=self.module.artifact(job_id,"preview.jpg")
+        path.write_bytes(b"next-frame-with-different-size")
+        self.assertEqual(response.body,b"first-frame")
+        self.assertEqual(int(response.headers["content-length"]),len(response.body))
+
+    def test_preview_replace_retries_temporary_windows_read_lock(self):
+        import pipeline
+        source=Path(self.temp.name)/"retry.tmp";target=source.with_suffix(".jpg")
+        source.write_bytes(b"new-frame");target.write_bytes(b"old-frame")
+        real_replace=os.replace;failures=iter((True,True,False))
+        def locked_replace(src,dst):
+            if next(failures):
+                raise PermissionError("Windows sharing violation")
+            return real_replace(src,dst)
+        with patch.object(pipeline.os,"replace",side_effect=locked_replace), patch.object(pipeline.time,"sleep"):
+            pipeline.replace_file(source,target)
+        self.assertEqual(target.read_bytes(),b"new-frame")
+        self.assertFalse(source.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

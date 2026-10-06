@@ -13,7 +13,7 @@ from typing import Literal
 import cv2
 import torch
 from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -284,6 +284,9 @@ def artifact(job_id: str, filename: str):
     path = RUNTIME / "jobs" / job_id / filename
     if not path.is_file():
         raise HTTPException(404,"Tệp chưa sẵn sàng.")
+    if filename == "preview.jpg":
+        # Bind size and bytes together: inference replaces this file while serving it.
+        return Response(path.read_bytes(),media_type="image/jpeg")
     return FileResponse(path, filename=filename if filename.endswith(("csv","json","yaml")) else None)
 
 

@@ -26,11 +26,23 @@ COCO_MAP = {3: "motorcycle", 2: "car", 7: "truck", 5: "bus", 1: "other"}
 MODELS = {"vehicle": ROOT / "models/vehicle-yolo11n.pt", "coco": ROOT / "models/yolo11n.pt", "quality": ROOT / "models/yolo11s.pt", "large": ROOT / "models/vehicle-large.pt"}
 
 
+def replace_file(temporary, path):
+    # Windows briefly locks a file while another request reads its contents.
+    for attempt in range(5):
+        try:
+            os.replace(temporary,path)
+            return
+        except PermissionError:
+            if attempt == 4:
+                raise
+            time.sleep(.02)
+
+
 def atomic_json(path, data):
     path = Path(path)
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(temporary, path)
+    replace_file(temporary, path)
 
 
 def sha256(path):
@@ -190,7 +202,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
                 if ok_jpg:
                     temporary = output / "preview.tmp"
                     temporary.write_bytes(jpeg.tobytes())
-                    os.replace(temporary, output / "preview.jpg")
+                    replace_file(temporary, output / "preview.jpg")
                 status.update(processed_frames=frames, video_seconds=round(seconds,3), event_count=len(events), active_count=len(engine.active(seconds)),
                               elapsed_seconds=round(time.monotonic()-start,2), progress=0 if live else min(.95,frames/metadata["frames"]*.95))
                 if progress:
