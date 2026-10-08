@@ -123,10 +123,12 @@ def main():
                         annotations[ann["image_id"]].append({"category_id":ann["category_id"],"bbox":ann["bbox"]})
             del document;gc.collect()
             options=[]
-            for image_id,anns in annotations.items():
+            for image_id,image in images.items():
                 if image_id in crowds:
                     continue
-                image=images[image_id]
+                anns=annotations.get(image_id,[])
+                if original_split=="train2017" and not anns:
+                    continue
                 if image["file_name"]!=f"{image_id:012d}.jpg":
                     raise ValueError("Unexpected COCO filename")
                 options.append({"image":f"coco_{image_id:012d}.jpg","info":image,"annotations":anns,"classes":list({COCO_MAPPING[a["category_id"]] for a in anns})})

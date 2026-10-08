@@ -31,6 +31,10 @@ class CompactTest(unittest.TestCase):
         self.assertEqual(selected,balanced(list(reversed(records)),5))
         backgrounds=[{"image":f"empty_{i}.jpg","classes":[]} for i in range(10)]
         self.assertEqual(sum(not r["classes"] for r in balanced(records+backgrounds,20)),1)
+        padded=balanced(records[:2]+backgrounds,8)
+        self.assertEqual(len(padded),8)
+        self.assertEqual(sum(bool(r["classes"]) for r in padded),2)
+        self.assertEqual(coco_labels([],100,100),[])
 
     def test_coco_mapping_clips_and_deduplicates_without_fake_crowd_boxes(self):
         car={"category_id":3,"bbox":[-10,20,30,20]}
