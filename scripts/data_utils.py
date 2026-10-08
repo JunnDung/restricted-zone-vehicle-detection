@@ -3,8 +3,23 @@ import hashlib
 import json
 import time
 import urllib.request
+import ctypes
+import struct
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+
+def memory_headroom_mb():
+    """Windows allocation needs both physical RAM and free commit capacity."""
+    if sys.platform!="win32":
+        return None
+    status=ctypes.create_string_buffer(64)  # MEMORYSTATUSEX: two DWORDs, seven ULONGLONGs
+    struct.pack_into("<I",status,0,64)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(status):
+        raise OSError("Cannot read Windows memory status")
+    values=struct.unpack("<II7Q",status.raw)
+    return min(values[3],values[5])//1024**2
 
 
 def sha256(path):
@@ -27,7 +42,7 @@ def verify_files(base, records, progress=None):
                 progress(min(start+1000,len(records)),len(records))
 
 
-def download(url, path):
+def download(url, path, quiet=False):
     path=Path(path)
     path.parent.mkdir(parents=True,exist_ok=True)
     receipt=path.with_suffix(path.suffix+".source.json")
@@ -51,7 +66,7 @@ def download(url, path):
                 with part.open("ab" if resumed else "wb") as f:
                     while chunk:=response.read(1024*1024):
                         f.write(chunk);done+=len(chunk)
-                        if done>=next_log:
+                        if not quiet and done>=next_log:
                             print(f"{path.name}: {done//1024**2}/{expected//1024**2} MB",flush=True)
                             next_log=done+100*1024**2
                 if expected and done!=expected:
