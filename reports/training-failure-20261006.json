@@ -1,0 +1,18 @@
+{
+  "status": "error",
+  "started_utc": "2026-10-06T15:34:01.036260+00:00",
+  "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "epochs": 30,
+  "epoch": 0,
+  "dataset_manifest_sha256": "f6e09ac10285f838593d4631ce0baaa6a02442d20c852abcbb8563524eaca2c8",
+  "train_images": 81923,
+  "verified_images": 107993,
+  "dataset_images": 107993,
+  "updated_utc": "2026-10-06T16:04:05.548161+00:00",
+  "evaluation_source": "visdrone",
+  "evaluation_split": "val",
+  "batch": 255,
+  "batches": 10241,
+  "current_epoch": 1,
+  "error": "Unable to allocate 4.69 MiB for an array with shape (1280, 1280, 3) and data type uint8"
+}

@@ -31,36 +31,32 @@ Một cảnh báo cho mỗi cặp track/vùng/lượt. Xe phải xuất hiện l
 
 Khi GPU đang train, **Tự động** dùng CPU cho giám sát; chọn GPU trực tiếp bị chặn để tránh hết VRAM. Có thể giảm kích thước AI/độ phân giải nguồn nếu CPU chậm. Bản đồ là ROI trong ảnh, chưa có tọa độ GIS; hệ thống cảnh báo cục bộ bằng giao diện/âm báo/nhật ký, không gửi email hay webhook.
 
-## Huấn luyện dataset lớn tại máy, không mất phí cloud
+## Fine-tune nhanh tại máy, không mất phí cloud
 
-Đã chuẩn bị **MIO-TCD Localization + VisDrone DET**: **81.923 ảnh train, 12.637 validation, 13.433 test**, tổng 107.993 ảnh sau khi bỏ 10.636 bản trùng hệt. Số ảnh train gấp khoảng 12,7 lần tập VisDrone ban đầu. MIO Localization tổng cộng 137.743 ảnh; chỉ phần train có ground truth được dùng và chia thành train/val/test nội bộ. Phần test chính thức không có nhãn không được dùng làm phép đo giả. Phân bố lớp, hash và nguồn tải ở `reports/large-dataset.json`.
+Run YOLO11s lớn đã lỗi RAM trong epoch 1, chưa hoàn thành epoch. Cấu hình hiện tại dùng **YOLO11n 5 lớp đã học phương tiện**, fine-tune tối đa **15 epoch**, batch **4**, 640 px, AMP, không Mosaic/cache ảnh. Bộ mới chọn tối đa **12.000 ảnh train** từ COCO vehicles + MIO camera + VisDrone; có validation/test riêng theo ba nguồn và loại trùng chính xác. Số lượng thực tế, lớp nhãn và checksum ở `reports/compact-dataset.json`.
 
 ```powershell
-# Cài CUDA nếu chưa có; chuẩn bị VisDrone ở data/vehicles.
-.\.venv\Scripts\python.exe scripts\prepare_visdrone.py
-# Tải MIO từ tác giả, chuyển nhãn thật, kiểm checksum và loại ảnh trùng hệt.
-.\.venv\Scripts\python.exe scripts\prepare_large.py
-# Chạy GPU cục bộ ở nền, tự đánh giá và commit/push kết quả khi hoàn tất.
+# Dataset hiện tại: kiểm lại toàn bộ ảnh/nhãn theo manifest.
+.\.venv\Scripts\python.exe scripts\prepare_compact.py
+# Chạy GPU ở nền; tự đánh giá và commit/push kết quả cuối.
 powershell -ExecutionPolicy Bypass -File start-training.ps1
-```
-
-Máy hiện tại đã có VisDrone và gói MIO tải đủ; không cần chạy lại chuẩn bị khi `datasets/large/manifest.json` tồn tại. 30 epoch trên dữ liệu lớn có thể kéo dài nhiều giờ hoặc hơn một ngày, tùy tốc độ thực tế; chưa có ETA đáng tin trước epoch đầu. Máy cần tiếp tục hoạt động. Checkpoint `runs/zoneguard_large/weights/last.pt` được lưu mỗi epoch; sau khi đã có checkpoint này, có thể tiếp tục phiên bị gián đoạn:
-
-```powershell
+# Chỉ resume sau khi đã có runs/zoneguard_compact/weights/last.pt.
 powershell -ExecutionPolicy Bypass -File start-training.ps1 -Resume
 ```
 
-Xem **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Tiến độ gồm số ảnh đã xác minh, batch đánh giá baseline và epoch/batch train; trong vòng lặp batch cập nhật khoảng mỗi 15 giây. Giai đoạn chuẩn bị dataloader được hiển thị riêng, chưa tính là batch training. Nếu tác vụ khác đang giữ VRAM, train chờ ít nhất 4 GB trống và không dừng tiến trình đó. Có thể kiểm tra GPU bằng `nvidia-smi`. Giữ dữ liệu nguyên checksum khi resume. Không xóa run/checkpoint đang huấn luyện. Nếu train lỗi, xem log rồi resume sau khi xử lý nguyên nhân; không lấy checkpoint lỗi làm mô hình chính.
+Trên máy mới, `prepare_visdrone.py` → `prepare_large.py` → `prepare_compact.py` tái tạo các nguồn và bước chọn mẫu. Khi compact đã được kiểm thành công, bộ lớn/raw trung gian không cần cho training. Nhật ký dọn dữ liệu ở `reports/data-cleanup.json`; video demo, model và lịch sử sử dụng được giữ.
 
-Dataset được chia theo nhóm ID, giữ split chính thức VisDrone, loại ảnh trùng chính xác giữa các split. Chưa chứng minh split MIO độc lập theo camera; cảnh gần giống vẫn có thể còn. Validation chọn checkpoint cân bằng hai nguồn; phép đo cuối dùng toàn bộ validation/test theo từng nguồn. YOLO11s mới chỉ xuất hiện trong dashboard sau khi đạt các tiêu chí chống suy giảm mô tả tại [MODEL_CARD](models/MODEL_CARD.md).
+Theo dõi **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Có số ảnh đã kiểm, batch đánh giá baseline và epoch/batch train; cập nhật khoảng 15 giây. Khi Windows còn dưới 2 GB RAM hoặc khả năng commit, training chờ. Khởi động GPU yêu cầu 2,5 GB VRAM trống. Các ứng dụng khác không bị đóng. `last.pt` được lưu mỗi epoch; chưa có checkpoint thì không thể resume batch giữa epoch. Giữ máy hoạt động, tránh Sleep.
 
-Ảnh dữ liệu, venv, log và runtime không đẩy GitHub. Repository lưu script tái tạo, checksum, báo cáo, trọng số mẫu; train hoàn tất với `--backup-github` sẽ commit riêng báo cáo và trọng số mới nếu đạt. Script không lưu token; Git dùng đăng nhập Credential Manager có sẵn của máy. Nếu push thất bại, kết quả vẫn ở máy; chạy `git push` sau khi kết nối lại.
+Model mới chỉ xuất hiện sau khi trung bình validation mAP50–95 tăng >0,005, không nguồn nào giảm quá 0,02 và F1 cảnh báo không giảm trên video hiệu chỉnh. Chưa khẳng định tăng độ chính xác hoặc tốc độ thực tế trước báo cáo cuối. COCO pretrained từng dùng dữ liệu COCO; split MIO chưa xác nhận độc lập camera. Chi tiết lựa chọn, nguồn và giới hạn: [TRAIN_NHANH](docs/TRAIN_NHANH.md), [MODEL_CARD](models/MODEL_CARD.md).
+
+Dataset/venv/log/runtime không đẩy GitHub. Repository giữ script, manifest hash, báo cáo và checkpoint demo; launcher dùng `--backup-github` để lưu kết quả cuối. Git dùng Credential Manager hiện có. Nếu push lỗi, kết quả vẫn ở máy; chạy `git push` sau khi kết nối lại.
 
 ## Kết quả đã kiểm chứng
 
 | Kiểm tra | Kết quả |
 |---|---|
-| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU, ảnh preview, khóa tệp Windows, hash và độ tin cậy xác nhận | 20 kiểm thử unittest đạt |
+| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU, ảnh preview, khóa tệp Windows, hash và độ tin cậy xác nhận | 23 kiểm thử unittest đạt |
 | Checkpoint nguồn VisDrone 5 lớp, test-dev sau chuyển đổi | mAP50 37,54%; mAP50–95 22,24% |
 | Video bãi xe Intel, 377 khung, cấu hình mặc định | Hai cảnh báo tại 6,56 s và 17,12 s |
 | Phân loại hai cảnh báo | Xe trắng đúng car; xe đỏ bị nhầm truck |
@@ -92,9 +88,10 @@ Mỗi lần CLI cần output mới để không ghi đè phiên cũ. API docs �
 | scripts/ | Chuẩn bị dữ liệu, train, đánh giá cảnh báo |
 | reports/ | Nguồn gốc và số đo tái kiểm tra |
 | runtime/ | Video tải lên, bản đồ từng nguồn, phiên, bằng chứng, log (không commit) |
-| datasets/large/ / runs/ | Dataset manifest và checkpoint training (không commit) |
+| datasets/compact/ / runs/zoneguard_compact/ | Dataset hiện tại và checkpoint training (không commit) |
 | docs/BAO_CAO.md | Mô tả phương pháp và kế hoạch đánh giá thực địa |
-| docs/THAM_KHAO_CAI_TIEN.md | Đối chiếu cách làm từ nghiên cứu, thay đổi đã áp dụng và giới hạn |
+| docs/THAM_KHAO_CAI_TIEN.md | Đối chiếu nghiên cứu và kiểm chứng ban đầu |
+| docs/TRAIN_NHANH.md | Cấu hình hiện tại, lựa chọn dataset và xử lý bộ nhớ |
 
 ## Tham khảo và ghi công
 

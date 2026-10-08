@@ -22,9 +22,9 @@
 
 COCO không đạt cảnh báo nào trên video bãi xe góc nhìn từ trên trong phép thử hiện tại; tăng kích thước mô hình đơn thuần chưa giải quyết được lệch miền dữ liệu.
 
-## Mô hình dữ liệu lớn
+## Run dữ liệu lớn ngày 06/10/2026 (đã dừng)
 
-`scripts/train_large.py` khởi tạo YOLO11s từ COCO, học trên MIO-TCD Localization kết hợp VisDrone. Máy tự kiểm checksum dữ liệu, đo baseline và huấn luyện trên GPU cục bộ; không gọi dịch vụ GPU trả phí. Thiết lập: 30 epoch tối đa, early stopping 8 epoch, batch 8, ảnh 640, seed 42, AMP, workers 0 để hạn chế RAM trên Windows.
+Run lịch sử của `scripts/train_large.py` khởi tạo YOLO11s từ COCO, học trên MIO-TCD Localization kết hợp VisDrone. Máy tự kiểm checksum dữ liệu, đo baseline và huấn luyện trên GPU cục bộ. Thiết lập khi đó: 30 epoch tối đa, early stopping 8 epoch, batch 8, ảnh 640, seed 42, AMP, workers 0. Run lỗi RAM trước khi hoàn thành epoch đầu; xem cấu hình thay thế bên dưới.
 
 `other` ở dữ liệu kết hợp thêm work_van và non-motorized_vehicle. MIO pickup_truck được gộp vào truck; đây là định nghĩa của tác giả dataset. Các motorized_vehicle không phân biệt được loại bị che xám, pedestrian là background. Không lấy nhãn demo ngẫu nhiên trong gói code làm ground truth.
 
@@ -41,3 +41,9 @@ Nếu không đạt, dashboard tiếp tục dùng checkpoint hiện tại. Kết
 Xe nhỏ, bị che, cảnh đêm, rung camera và góc nhìn khác dữ liệu có thể gây lỗi. Track ID đổi có thể gây cảnh báo lặp; ID giữ sai có thể làm bỏ sót. Cần video có nhãn từ camera triển khai và đánh giá theo lượt xe trước khi vận hành thực tế. MIO chia theo nhóm ID ảnh; chưa chứng minh các camera độc lập giữa train/val/test, dù ảnh trùng hệt bị loại.
 
 Mã dự án và Ultralytics dùng AGPL-3.0. MIO-TCD: CC BY-NC-SA 4.0 theo [tác giả](https://tcd.miovision.com/challenge/dataset.html). VisDrone: theo [điều khoản dataset](https://github.com/VisDrone/VisDrone-Dataset). Trọng số kết hợp cần được sử dụng phù hợp với điều khoản các nguồn dữ liệu này.
+
+## Cấu hình thay thế ngày 08/10/2026
+
+YOLO11s/MIO+VisDrone ở trên là run lịch sử, đã lỗi RAM tại epoch 1 batch 255, không tạo model được nghiệm thu. Cấu hình mặc định mới fine-tune `vehicle-yolo11n.pt` trên compact COCO+MIO+VisDrone (tối đa 12.000 train), 15 epoch, batch 4, imgsz 640, AMP, mosaic=0, SGD lr0=0,002. Dataset/provenance mới: `reports/compact-dataset.json`; baseline/kết quả: `reports/compact-baseline-validation.json`, `reports/compact-training.json` khi tương ứng hoàn tất. Không kế thừa số mAP của bộ lớn làm kết quả compact.
+
+Quy tắc nghiệm thu mới áp dụng cho cả ba nguồn: trung bình validation mAP50–95 tăng >0,005, từng nguồn giảm không quá 0,02, F1 video hồi quy không giảm; quyết định trước test. Giữ khóa model `large` và tên `vehicle-large.pt` để tương thích API; nội dung ứng viên mới là YOLO11n. Test COCO là phần val2017 không fine-tune, nhưng pretrained/development từng dùng COCO; không gọi đây là dữ liệu độc lập hoàn toàn với model gốc. Split MIO chưa độc lập camera được chứng minh. Các giấy phép ảnh nguồn giữ nguyên. Xem `docs/TRAIN_NHANH.md`.

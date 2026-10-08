@@ -28,11 +28,11 @@ Checkpoint ban đầu từ VisDrone DET đã fine-tune 30 epoch trên RTX 3060 L
 
 Trong video bãi xe Intel, đa giác mẫu tạo hai cảnh báo xác nhận ở 6,56 s và 17,12 s. Xe thứ hai là ô tô đỏ nhưng model gán truck; COCO pretrained YOLO11n và YOLO11s không tạo cảnh báo. Đây là bằng chứng cần dữ liệu sát góc camera, không chỉ tăng số tham số.
 
-Pipeline mới dùng phần có nhãn thật của MIO-TCD Localization, kết hợp VisDrone giữ tính đa góc nhìn. Nhãn ground truth gốc được đọc, hộp MIO tọa độ inclusive được chuyển sang YOLO và clipping đúng kích thước ảnh. Nhóm motorized_vehicle không phân biệt loại được che, pedestrian làm background. Ghi SHA-256 ảnh/nhãn, nguồn tải, chính sách split và phân bố lớp để phát hiện dữ liệu thay đổi.
+Run mở rộng MIO+VisDrone ngày 06/10/2026 lỗi RAM tại epoch 1 batch 255, chưa có checkpoint mới. Pipeline thay thế ngày 08/10/2026 chọn tối đa 12.000 ảnh train từ COCO vehicles, MIO-TCD Localization và VisDrone; fine-tune YOLO11n đã học phương tiện. Nhãn ground truth gốc được đọc, hộp MIO tọa độ inclusive được chuyển sang YOLO và clipping đúng kích thước ảnh. Nhóm motorized_vehicle không phân biệt loại được che, pedestrian làm background. COCO giữ motorcycle/car/truck/bus/bicycle, loại ảnh có crowd box phương tiện. Ghi SHA-256 ảnh/nhãn, nguồn tải, chính sách split và phân bố lớp để phát hiện dữ liệu thay đổi.
 
-MIO chia bằng hash nhóm ID liền kề 1.000 ảnh để hạn chế đưa ảnh cạnh nhau sang các split khác; chưa có metadata camera xác nhận độc lập. Loại ảnh trùng hệt bằng hash trước khi lập danh sách train/validation/test, ưu tiên giữ ảnh ở test rồi validation. Near duplicate chưa được loại. Checkpoint được chọn với validation cân bằng hai nguồn; đo toàn bộ validation riêng từng nguồn, rồi test giữ lại. Không dùng các tệp demo prediction của tác giả làm nhãn train.
+MIO chia bằng hash nhóm ID liền kề 1.000 ảnh để hạn chế đưa ảnh cạnh nhau sang các split khác; chưa có metadata camera xác nhận độc lập. Compact giữ phân vùng MIO/VisDrone này; COCO train2017 dùng train, val2017 chia ID chẵn/lẻ cho validation/test. Loại ảnh trùng hệt bằng hash trước khi lập danh sách, ưu tiên giữ ảnh ở test rồi validation. Near duplicate chưa được loại. Chọn mẫu có độ phủ lớp theo thứ tự hash cố định, validation/test tối đa 500 ảnh mỗi nguồn. Đánh giá riêng từng nguồn; không gọi đây là benchmark chính thức. Không dùng các tệp demo prediction của tác giả làm nhãn train.
 
-Các báo cáo máy đọc được nằm trong `reports/`: upstream-training, upstream-dataset, model-comparison, parking-reference, large-dataset, large-baseline-validation, large-training khi tương ứng hoàn tất. Không điền số đo train mới khi chưa thực sự chạy xong. Điều kiện đưa model mới vào sử dụng: trung bình validation mAP50–95 tăng >0,005, VisDrone giảm không quá 0,02, F1 cảnh báo có/không xét loại xe đều không giảm trên video hiệu chỉnh.
+Các báo cáo máy đọc được nằm trong `reports/`: upstream-training, upstream-dataset, model-comparison, parking-reference và các báo cáo large lịch sử. Run hiện tại dùng compact-dataset, compact-baseline-validation, compact-training khi tương ứng hoàn tất. Không điền số đo train mới khi chưa thực sự chạy xong. Điều kiện đưa model mới vào sử dụng: trung bình validation mAP50–95 ba nguồn tăng >0,005, từng nguồn giảm không quá 0,02, F1 cảnh báo có/không xét loại xe đều không giảm trên video hiệu chỉnh. Quyết định trước khi xem test; COCO từng dùng trong pretrain/phát triển model nên test này chưa độc lập hoàn toàn.
 
 ## Cải tiến đã triển khai
 
@@ -43,12 +43,12 @@ Các báo cáo máy đọc được nằm trong `reports/`: upstream-training, u
 | Nhãn thay đổi làm mở lượt mới | Tách trạng thái hình học và loại xe; phiếu nhãn theo track | Sai ổn định không tự sửa được |
 | Đổi nguồn mang theo tracker/bản đồ | Tracker mới và map riêng từng source, snapshot từng phiên | Người dùng phải vẽ lại khi camera dịch chuyển |
 | Dữ liệu/nhãn thiếu nguồn gốc | Hash, mapping rõ, split có manifest, baseline đối chứng | Split MIO chưa chứng minh camera độc lập |
-| GPU laptop bị chia sẻ quá mức | Một phiên giám sát, CPU khi GPU train, AMP batch 8 | CPU có thể không đạt thời gian thực |
+| GPU/RAM laptop bị chia sẻ quá mức | Một phiên giám sát, CPU khi GPU train, AMP batch 4, Mosaic=0; chờ nếu RAM hoặc khả năng commit dưới 2 GB | Ứng dụng khác vẫn có thể tăng bộ nhớ giữa hai lần kiểm tra; CPU có thể không đạt thời gian thực |
 | Mất lịch sử khi restart | SQLite WAL và phục hồi phiên bị gián đoạn | Chỉ lưu tại một máy; chưa có HA/backup runtime tự động |
 | Khó rà soát kết quả | Ảnh bằng chứng, nút xem video từ hai giây trước cảnh báo, overlay MP4/H.264, CSV/JSON | Chưa có video clip riêng quanh từng cảnh báo |
 | Không biết train đang làm gì | Số ảnh xác minh, batch baseline và epoch/batch train, cập nhật khoảng 15 giây | Chưa có ETA đáng tin trước epoch đầu |
 
-Chi tiết đối chiếu nguồn nghiên cứu, lựa chọn cải tiến và kết quả kiểm chứng nằm trong [Tham khảo và cải tiến](THAM_KHAO_CAI_TIEN.md).
+Chi tiết đối chiếu nguồn nghiên cứu và kiểm chứng ban đầu nằm trong [Tham khảo và cải tiến](THAM_KHAO_CAI_TIEN.md). Cấu hình/dữ liệu thay thế và cách chạy tại máy nằm trong [Fine-tune nhanh](TRAIN_NHANH.md); nhật ký xóa dữ liệu trung gian ở `reports/data-cleanup.json`.
 
 ## Đánh giá trên camera triển khai
 
