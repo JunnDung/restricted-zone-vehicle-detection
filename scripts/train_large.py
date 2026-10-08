@@ -1,5 +1,6 @@
 """Train on local CUDA, evaluate held-out domains, promote only after validation."""
 import argparse
+import gc
 import json
 import os
 import shutil
@@ -13,7 +14,7 @@ os.environ["YOLO_VERBOSE"]="False"
 import torch
 from ultralytics import YOLO
 
-from data_utils import sha256, verify_files
+from data_utils import sha256, verify_files, memory_headroom_mb
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
@@ -29,9 +30,9 @@ def metrics_dict(metrics):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data",type=Path,default=ROOT/"datasets/large")
-    parser.add_argument("--epochs",type=int,default=30)
-    parser.add_argument("--batch",type=int,default=8)
+    parser.add_argument("--data",type=Path,default=ROOT/"datasets/compact")
+    parser.add_argument("--epochs",type=int,default=15)
+    parser.add_argument("--batch",type=int,default=4)
     parser.add_argument("--imgsz",type=int,choices=[640,960],default=640)
     parser.add_argument("--resume",action="store_true")
     parser.add_argument("--backup-github",action="store_true")
@@ -40,19 +41,26 @@ def main():
         parser.error("Local CUDA GPU required; install setup.ps1 -Cuda")
     if not 1<=args.epochs<=200 or not 1<=args.batch<=32:
         parser.error("epochs 1–200, batch 1–32")
-    data=args.data.resolve();run=ROOT/"runs/zoneguard_large"
+    data=args.data.resolve();run=ROOT/"runs/zoneguard_compact"
     if run.exists() and not args.resume:
         parser.error("Run already exists. Use --resume to retain checkpoints.")
+    if args.resume and not (run/"weights/last.pt").exists():
+        parser.error("No completed epoch checkpoint to resume")
     if not (data/"manifest.json").exists():
-        parser.error("Run scripts/prepare_large.py first")
+        parser.error("Run scripts/prepare_compact.py first")
     manifest=json.loads((data/"manifest.json").read_text(encoding="utf-8"))
     manifest_hash=sha256(data/"manifest.json")
-    run_settings={"dataset_manifest_sha256":manifest_hash,"epochs":args.epochs,"batch":args.batch,"imgsz":args.imgsz,"seed":42}
-    saved=ROOT/"reports/large-run-settings.json"
+    sources=manifest["sources"]
+    limitations=manifest["limitations"]
+    base_weights=ROOT/"models/vehicle-yolo11n.pt"
+    run_settings={"dataset_manifest_sha256":manifest_hash,"epochs":args.epochs,"batch":args.batch,"imgsz":args.imgsz,"seed":42,
+                  "architecture":"YOLO11n","base_weights_sha256":sha256(base_weights),"mosaic":0,"optimizer":"SGD","lr0":.002,"workers":0,"cache":False,"amp":True}
+    saved=ROOT/"reports/compact-run-settings.json"
     if args.resume:
         old=json.loads(saved.read_text())
-        if old["dataset_manifest_sha256"]!=manifest_hash or old["imgsz"]!=args.imgsz:
-            parser.error("Resume dataset/image size must match the original run")
+        if any(old.get(k)!=run_settings[k] for k in ("dataset_manifest_sha256","imgsz","batch","architecture","base_weights_sha256")):
+            parser.error("Resume dataset, model, batch and image size must match the original run")
+        run_settings=old
     else:
         atomic_json(saved,run_settings)
     torch.set_num_threads(4)
@@ -68,18 +76,27 @@ def main():
             state["updated_utc"]=datetime.now(timezone.utc).isoformat()
             atomic_json(live,state)
             print(json.dumps(state),flush=True)
+    def memory_ready():
+        previous=state["status"];waited=False
+        while (free:=memory_headroom_mb()) is not None and free<2048:
+            waited=True;state.update(status="waiting_memory",memory_headroom_mb=free)
+            publish(True);time.sleep(10)
+        if waited:
+            state.update(status=previous,memory_headroom_mb=free);publish(True)
     # Verify once before optimization. A changed image invalidates the experiment.
     def verified(done,total):
         state.update(verified_images=done,dataset_images=total)
         publish(True)
     verify_files(data,manifest["files"],verified)
+    del manifest;gc.collect()
+    memory_ready()
     # A second project can occupy the same laptop GPU; keep its process intact.
-    while torch.cuda.mem_get_info()[0] < 4*1024**3:
+    while torch.cuda.mem_get_info()[0] < 2.5*1024**3:
         state.update(status="waiting_gpu",free_vram_mb=round(torch.cuda.mem_get_info()[0]/1024**2))
         atomic_json(live,state)
         time.sleep(10)
     state["status"]="evaluating";atomic_json(live,state)
-    baseline_report=ROOT/"reports/large-baseline-validation.json"
+    baseline_report=ROOT/"reports/compact-baseline-validation.json"
     def validation_callbacks(model,source,split):
         def start(validator):
             state.update(status="evaluating",evaluation_source=source,evaluation_split=split,batch=0,batches=len(validator.dataloader))
@@ -87,15 +104,20 @@ def main():
         def batch(validator):
             state["batch"]=validator.batch_i+1
             publish(state["batch"]==1)
+            memory_ready()
         model.add_callback("on_val_start",start)
         model.add_callback("on_val_batch_end",batch)
     def evaluate(weights,source,split,name):
+        memory_ready()
         model=YOLO(str(weights))
         validation_callbacks(model,source,split)
-        return metrics_dict(model.val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=0,
-                                                project=str(ROOT/"runs"),name=name,exist_ok=True,plots=False,verbose=False))
+        try:
+            return metrics_dict(model.val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=0,
+                                          project=str(ROOT/"runs"),name=name,exist_ok=True,plots=False,verbose=False))
+        finally:
+            del model;gc.collect();torch.cuda.empty_cache()
     if not args.resume:
-        baseline={source:evaluate(ROOT/"models/vehicle-yolo11n.pt",source,"val","baseline_"+source+"_val") for source in ("mio","visdrone")}
+        baseline={source:evaluate(base_weights,source,"val","compact_baseline_"+source+"_val") for source in sources}
         atomic_json(baseline_report,{"dataset_manifest_sha256":manifest_hash,"metrics":baseline})
     else:
         baseline=json.loads(baseline_report.read_text())["metrics"]
@@ -103,33 +125,37 @@ def main():
     def epoch_start(trainer):
         state.update(status="training",current_epoch=trainer.epoch+1,batch=0,batches=len(trainer.train_loader))
         publish(True)
+        memory_ready()
     def batch_end(trainer):
         state["batch"]+=1
         publish(state["batch"]==1)
+        memory_ready()
     def epoch_end(trainer):
         state.update(epoch=trainer.epoch+1,epochs=trainer.epochs,status="training",metrics={k:float(v) for k,v in trainer.metrics.items()},updated_utc=datetime.now(timezone.utc).isoformat())
         atomic_json(live,state)
         print(json.dumps({"epoch":state["epoch"],"epochs":state["epochs"],"metrics":state["metrics"]}),flush=True)
-    model=YOLO(str(run/"weights/last.pt") if args.resume else str(ROOT/"models/yolo11s.pt"))
+    memory_ready()
+    model=YOLO(str(run/"weights/last.pt") if args.resume else str(base_weights))
     model.add_callback("on_train_epoch_start",epoch_start)
     model.add_callback("on_train_batch_end",batch_end)
     model.add_callback("on_fit_epoch_end",epoch_end)
-    validation_callbacks(model,"balanced","val")
+    validation_callbacks(model,"three_sources","val")
     started=time.monotonic()
     if args.resume:
         model.train(resume=True,device="0",workers=0)
     else:
         model.train(data=str(data/"data.yaml"),epochs=args.epochs,batch=args.batch,imgsz=args.imgsz,device="0",workers=0,seed=42,deterministic=True,
-                    project=str(ROOT/"runs"),name="zoneguard_large",exist_ok=True,patience=8,cache=False,amp=True,
-                    mosaic=.5,close_mosaic=5,scale=.3,save_period=5)
+                    project=str(ROOT/"runs"),name="zoneguard_compact",exist_ok=True,patience=5,cache=False,amp=True,
+                    mosaic=0,close_mosaic=0,scale=.3,save_period=5,plots=False,optimizer="SGD",lr0=.002)
     training_seconds=time.monotonic()-started
     best=run/"weights/best.pt"
+    del model;gc.collect();torch.cuda.empty_cache()
     state["status"]="evaluating";atomic_json(live,state)
-    validation={source:evaluate(best,source,"val","large_"+source+"_val") for source in ("mio","visdrone")}
-    old_mean=sum(m["mAP50_95"] for m in baseline.values())/2
-    new_mean=sum(m["mAP50_95"] for m in validation.values())/2
+    validation={source:evaluate(best,source,"val","compact_"+source+"_val") for source in sources}
+    old_mean=sum(m["mAP50_95"] for m in baseline.values())/len(sources)
+    new_mean=sum(m["mAP50_95"] for m in validation.values())/len(sources)
     # Promotion is decided on validation before looking at either test split.
-    accepted=new_mean>old_mean+.005 and validation["visdrone"]["mAP50_95"]>=baseline["visdrone"]["mAP50_95"]-.02
+    accepted=new_mean>old_mean+.005 and all(validation[s]["mAP50_95"]>=baseline[s]["mAP50_95"]-.02 for s in sources)
     reference=json.loads((ROOT/"reports/parking-reference.json").read_text())
     video_scores={}
     for key,weights in (("baseline",ROOT/"models/vehicle-yolo11n.pt"),("candidate",best)):
@@ -138,28 +164,29 @@ def main():
         if result["source_sha256"]!=reference["source_sha256"]:
             raise ValueError("Admission video was modified")
         video_scores[key]={"class_aware":score(reference["events"],result["events"]),"alert_only":score(reference["events"],result["events"],False)}
+        gc.collect();torch.cuda.empty_cache()
     accepted=accepted and all(video_scores["candidate"][metric]["f1"]>=video_scores["baseline"][metric]["f1"] for metric in ("class_aware","alert_only"))
-    test={source:evaluate(best,source,"test","large_"+source+"_test") for source in ("mio","visdrone")}
-    report={"architecture":"YOLO11s","trained_locally":True,"device":torch.cuda.get_device_name(0),"settings":run_settings,
+    test={source:evaluate(best,source,"test","compact_"+source+"_test") for source in sources}
+    report={"architecture":"YOLO11n","trained_locally":True,"device":torch.cuda.get_device_name(0),"settings":run_settings,
             "actual_epochs":state["epoch"],"elapsed_training_seconds":round(training_seconds,1),"elapsed_training_and_evaluation_seconds":round(time.monotonic()-started,1),"dataset_manifest_sha256":manifest_hash,
-            "base_weights_sha256":sha256(ROOT/"models/yolo11s.pt"),"weights_sha256":sha256(best),"baseline_validation":baseline,
+            "base_weights_sha256":sha256(base_weights),"weights_sha256":sha256(best),"baseline_validation":baseline,
             "validation":validation,"test":test,"admission_video":video_scores,"accepted":accepted,"balanced_validation_mean_before":old_mean,"balanced_validation_mean_after":new_mean,
-            "promotion_rule":"mean val mAP50-95 improves >0.005; VisDrone val does not fall more than 0.02; neither alert nor class-aware F1 regresses on the admission video. Selection made before test evaluation.",
-            "limitations":manifest["limitations"]+" Detector metrics do not measure zone violations. Camera-specific video verification is still required."}
-    atomic_json(ROOT/"reports/large-training.json",report)
-    shutil.copy2(run/"results.csv",ROOT/"reports/large-training-curve.csv")
+            "promotion_rule":"mean val mAP50-95 improves >0.005; no source val falls more than 0.02; neither alert nor class-aware F1 regresses on the admission video. Selection made before test evaluation.",
+            "limitations":limitations+" Detector metrics do not measure zone violations. Camera-specific video verification is still required."}
+    atomic_json(ROOT/"reports/compact-training.json",report)
+    shutil.copy2(run/"results.csv",ROOT/"reports/compact-training-curve.csv")
     if accepted:
         candidate=ROOT/"models/vehicle-large.pt"
         temporary=candidate.with_suffix(".tmp")
         shutil.copy2(best,temporary);os.replace(temporary,candidate)
-    state.update(status="completed",accepted=accepted,report="reports/large-training.json",finished_utc=datetime.now(timezone.utc).isoformat())
+    state.update(status="completed",accepted=accepted,report="reports/compact-training.json",finished_utc=datetime.now(timezone.utc).isoformat())
     atomic_json(live,state)
     if args.backup_github:
-        paths=["reports/large-training.json","reports/large-training-curve.csv","reports/large-baseline-validation.json","reports/large-run-settings.json"]
+        paths=["reports/compact-training.json","reports/compact-training-curve.csv","reports/compact-baseline-validation.json","reports/compact-run-settings.json"]
         if accepted:
             paths.append("models/vehicle-large.pt")
         subprocess.run(["git","add","--",*paths],cwd=ROOT,check=True)
-        subprocess.run(["git","commit","-m","model: train and evaluate YOLO11s on expanded traffic datasets"],cwd=ROOT,check=True)
+        subprocess.run(["git","commit","-m","model: evaluate compact YOLO11n traffic fine-tuning"],cwd=ROOT,check=True)
         subprocess.run(["git","push"],cwd=ROOT,check=True)
     print(json.dumps(report,indent=2),flush=True)
 
