@@ -1,0 +1,159 @@
+{
+  "dataset": "Compact traffic + COCO vehicles",
+  "sources": [
+    "mio",
+    "visdrone",
+    "coco"
+  ],
+  "names": [
+    "motorcycle",
+    "car",
+    "truck",
+    "bus",
+    "other"
+  ],
+  "policy": {
+    "version": 1,
+    "parent_manifest_sha256": "f6e09ac10285f838593d4631ce0baaa6a02442d20c852abcbb8563524eaca2c8",
+    "train_limits": {
+      "mio": 5000,
+      "visdrone": 2000,
+      "coco": 5000
+    },
+    "heldout_limit_per_source": 500,
+    "background_limit": "min(100, limit//20), if available"
+  },
+  "usable_images": {
+    "mio/test": 500,
+    "visdrone/test": 500,
+    "coco/test": 500,
+    "mio/val": 500,
+    "visdrone/val": 500,
+    "coco/val": 500,
+    "mio/train": 5000,
+    "visdrone/train": 2000,
+    "coco/train": 5000
+  },
+  "boxes": {
+    "mio/test": {
+      "other": 127,
+      "car": 1058,
+      "motorcycle": 104,
+      "truck": 258,
+      "bus": 112
+    },
+    "visdrone/test": {
+      "truck": 753,
+      "other": 2396,
+      "car": 8380,
+      "motorcycle": 2048,
+      "bus": 845
+    },
+    "coco/test": {
+      "motorcycle": 135,
+      "car": 796,
+      "truck": 163,
+      "bus": 111,
+      "other": 136
+    },
+    "mio/val": {
+      "truck": 215,
+      "motorcycle": 106,
+      "car": 1256,
+      "bus": 119,
+      "other": 126
+    },
+    "visdrone/val": {
+      "car": 12907,
+      "other": 4392,
+      "truck": 692,
+      "motorcycle": 4472,
+      "bus": 236
+    },
+    "coco/val": {
+      "motorcycle": 175,
+      "car": 936,
+      "truck": 222,
+      "bus": 138,
+      "other": 141
+    },
+    "mio/train": {
+      "car": 12242,
+      "motorcycle": 1022,
+      "truck": 2355,
+      "bus": 1192,
+      "other": 1333
+    },
+    "visdrone/train": {
+      "car": 43230,
+      "motorcycle": 9391,
+      "bus": 1892,
+      "truck": 3884,
+      "other": 13319
+    },
+    "coco/train": {
+      "motorcycle": 2389,
+      "car": 9313,
+      "truck": 2436,
+      "bus": 1812,
+      "other": 2137
+    }
+  },
+  "duplicates_removed": {},
+  "coco_annotations": {
+    "url": "https://s3.amazonaws.com/images.cocodataset.org/annotations/annotations_trainval2017.zip",
+    "bytes": 252907541,
+    "sha256": "113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268"
+  },
+  "coco_mapping": {
+    "4": 0,
+    "3": 1,
+    "8": 2,
+    "6": 3,
+    "2": 4
+  },
+  "coco_licenses": [
+    {
+      "url": "http://creativecommons.org/licenses/by-nc-sa/2.0/",
+      "id": 1,
+      "name": "Attribution-NonCommercial-ShareAlike License"
+    },
+    {
+      "url": "http://creativecommons.org/licenses/by-nc/2.0/",
+      "id": 2,
+      "name": "Attribution-NonCommercial License"
+    },
+    {
+      "url": "http://creativecommons.org/licenses/by-nc-nd/2.0/",
+      "id": 3,
+      "name": "Attribution-NonCommercial-NoDerivs License"
+    },
+    {
+      "url": "http://creativecommons.org/licenses/by/2.0/",
+      "id": 4,
+      "name": "Attribution License"
+    },
+    {
+      "url": "http://creativecommons.org/licenses/by-sa/2.0/",
+      "id": 5,
+      "name": "Attribution-ShareAlike License"
+    },
+    {
+      "url": "http://creativecommons.org/licenses/by-nd/2.0/",
+      "id": 6,
+      "name": "Attribution-NoDerivs License"
+    },
+    {
+      "url": "http://flickr.com/commons/usage/",
+      "id": 7,
+      "name": "No known copyright restrictions"
+    },
+    {
+      "url": "http://www.usa.gov/copyright.shtml",
+      "id": 8,
+      "name": "United States Government Work"
+    }
+  ],
+  "limitations": "Curated, class-covered subset; not official dataset benchmark. COCO val halves were not fine-tuned on, but COCO pretrained model development used COCO. MIO camera-disjointness is unverified; near duplicates may remain. Images retain original licenses; MIO noncommercial and VisDrone author terms apply.",
+  "manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0"
+}

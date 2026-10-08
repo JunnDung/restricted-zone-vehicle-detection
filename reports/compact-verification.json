@@ -1,0 +1,32 @@
+{
+  "timestamp_utc": "2026-10-08T06:25:16.547576+00:00",
+  "manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0",
+  "images_verified": 15000,
+  "counts": {
+    "mio/test": 500,
+    "visdrone/test": 500,
+    "coco/test": 500,
+    "mio/val": 500,
+    "visdrone/val": 500,
+    "coco/val": 500,
+    "mio/train": 5000,
+    "visdrone/train": 2000,
+    "coco/train": 5000
+  },
+  "background_images": {
+    "mio/test": 25,
+    "visdrone/test": 22,
+    "coco/test": 104,
+    "mio/val": 25,
+    "visdrone/val": 2,
+    "coco/val": 48,
+    "mio/train": 100,
+    "visdrone/train": 100,
+    "coco/train": 0
+  },
+  "all_five_classes_in_each_source_split": true,
+  "exact_duplicates": 0,
+  "annotation_sample_sheet": ".local/compact-label-check.png",
+  "limitations": "Nine annotation samples visually inspected; labels not manually reviewed for all images. Near duplicates and camera-disjointness are unverified. JPEG header/format validation was used; not every pixel was decoded in this check.",
+  "image_headers_and_label_bounds_passed": true
+}
