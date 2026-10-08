@@ -1,0 +1,15 @@
+{
+  "dataset_manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0",
+  "epochs": 15,
+  "batch": 4,
+  "imgsz": 640,
+  "seed": 42,
+  "architecture": "YOLO11n",
+  "base_weights_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+  "mosaic": 0,
+  "optimizer": "SGD",
+  "lr0": 0.002,
+  "workers": 0,
+  "cache": false,
+  "amp": true
+}
