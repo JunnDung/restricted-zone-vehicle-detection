@@ -1,0 +1,37 @@
+{
+  "snapshot_utc": "2026-10-08T06:32:49.748509+00:00",
+  "live_snapshot": {
+    "status": "training",
+    "started_utc": "2026-10-08T06:29:13.864425+00:00",
+    "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "epochs": 15,
+    "epoch": 0,
+    "dataset_manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0",
+    "train_images": 12000,
+    "verified_images": 15000,
+    "dataset_images": 15000,
+    "updated_utc": "2026-10-08T06:32:42.504305+00:00",
+    "evaluation_source": "coco",
+    "evaluation_split": "val",
+    "batch": 488,
+    "batches": 3000,
+    "current_epoch": 1
+  },
+  "actual_trainer_arguments_verified": {
+    "model": "D:\\ComputerVision\\PhuongTienVungCam\\models\\vehicle-yolo11n.pt",
+    "epochs": 15,
+    "batch": 4,
+    "imgsz": 640,
+    "mosaic": 0,
+    "workers": 0,
+    "cache": false,
+    "amp": true,
+    "optimizer": "SGD",
+    "lr0": 0.002
+  },
+  "memory_headroom_mb": 6273,
+  "launcher_pid": 36236,
+  "active_model_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+  "screenshot": "reports/compact-training-start.png",
+  "limitations": "Initial running snapshot only; no epoch completed yet. Not final accuracy or an automatically refreshing status."
+}
