@@ -5,7 +5,9 @@
 
 **Hệ thống phát hiện phương tiện đi vào khu vực cấm** từ video hoặc camera USB. Dự án cá nhân kết hợp YOLO11, ByteTrack và bản đồ vùng đa giác để ghi nhận vi phạm, lưu bằng chứng và xem lại trên dashboard tiếng Việt.
 
-![Dashboard ZoneGuard](reports/dashboard.png)
+![Dashboard ZoneGuard: theo dõi ô tô, vùng cấm và nhật ký cảnh báo trên GPU NVIDIA](reports/dashboard.jpg)
+
+*Ảnh chụp giao diện thật với YOLO11n hiện tại: phiên demo giới hạn 18 giây, hai cảnh báo. FPS trên ảnh là số đo của riêng phiên minh họa trên RTX 3060 Laptop.*
 
 ## Tính năng
 
@@ -15,6 +17,10 @@
 - Tổng hợp nhãn qua nhiều khung hình để giảm thay đổi loại xe; hiển thị nhóm chung khi chưa đủ bằng chứng phân loại.
 - Lưu ảnh bằng chứng, thời điểm vào vùng, track ID và nhật ký SQLite; xem video kết quả và xuất CSV/JSON.
 - Chạy suy luận trên CPU hoặc GPU NVIDIA; cung cấp dashboard và REST API qua FastAPI.
+
+![Bằng chứng ô tô đi vào vùng cấm tại giây 6,56](reports/alert-example.jpg)
+
+*Ảnh bằng chứng do hệ thống lưu: ô tô được theo dõi bằng track ID, điểm tiếp xúc mặt đường nằm trong vùng cấm màu đỏ.*
 
 ## Cài đặt và chạy
 
@@ -50,6 +56,8 @@ Checkpoint mặc định trên dashboard là **YOLO11n**, fine-tune 15 epoch tr�
 Trung bình tăng **25,44 điểm phần trăm**, nhưng VisDrone giảm **2,08 điểm phần trăm**. Đây là các split chọn lọc, không phải benchmark đầy đủ của các dataset. Quyết định chọn checkpoint dựa trên validation trước khi đánh giá test.
 
 ![Learning curve và kết quả test](reports/evaluation.png)
+
+*Trái: mAP validation hỗn hợp qua 15 epoch. Phải: mAP50–95 trên test chọn lọc theo từng nguồn; đây là phép đo detector, không phải độ chính xác cảnh báo thực địa.*
 
 Video hồi quy bãi xe gồm 377 khung hình và hai lượt xe: F1 có xét loại xe tăng từ 0,50 lên 1,00; pipeline đạt 28,10 FPS trên Tesla T4, tính cả xuất H.264 trong một lần chạy. Phép đo này thực hiện trước khi bổ sung chính sách tổng hợp nhãn hiện tại. Hai lượt xe không đủ để suy ra độ chính xác ngoài thực địa.
 
