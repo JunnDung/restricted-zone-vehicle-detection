@@ -105,6 +105,15 @@ class ApiTest(unittest.TestCase):
                     self.assertEqual(job["request"]["device"],"cpu")
                     self.assertEqual(job["status"],"completed")
 
+    def test_colab_training_does_not_reserve_the_local_gpu(self):
+        root=Path(self.temp.name)/'cloud-training-test';(root/'reports').mkdir(parents=True)
+        (root/'reports/training-live.json').write_text(json.dumps({'status':'training','execution_environment':'google_colab'}))
+        with patch.object(self.module,'ROOT',root),patch.object(self.module,'analyze',return_value={'phase':'completed','event_count':0,'progress':1}) as analyze:
+            response=self.client.post('/api/jobs',json={'source_id':'parking','zone_map':self.map,'device':'0'})
+            self.assertEqual(response.status_code,201)
+            self.module.manager.thread.join(3)
+            self.assertEqual(analyze.call_args.kwargs['device'],'0')
+
     def test_preview_is_a_snapshot_while_inference_replaces_file(self):
         job_id="b"*32
         self.module.manager.store.save_job({"id":job_id,"created":"2026-10-06","status":"completed"})
