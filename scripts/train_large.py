@@ -25,7 +25,14 @@ from evaluate_events import score
 
 def metrics_dict(metrics):
     return {"precision":float(metrics.box.mp),"recall":float(metrics.box.mr),"mAP50":float(metrics.box.map50),"mAP50_95":float(metrics.box.map),
+            "speed_ms_per_image":{key:float(value) for key,value in metrics.speed.items()},
             "per_class":[{"class":metrics.names[int(cls)],"AP50":float(metrics.box.ap50[i]),"AP50_95":float(metrics.box.ap[i])} for i,cls in enumerate(metrics.box.ap_class_index)]}
+
+
+def detector_admission(baseline,candidate):
+    old=sum(m['mAP50_95'] for m in baseline.values())/len(baseline)
+    new=sum(candidate[s]['mAP50_95'] for s in baseline)/len(baseline)
+    return new>old+.005 and all(candidate[s]['mAP50_95']>=baseline[s]['mAP50_95']-.02 for s in baseline),old,new
 
 
 def main():
@@ -137,6 +144,16 @@ def main():
         state.update(epoch=trainer.epoch+1,epochs=trainer.epochs,status="training",metrics={k:float(v) for k,v in trainer.metrics.items()},updated_utc=datetime.now(timezone.utc).isoformat())
         atomic_json(live,state)
         print(json.dumps({"epoch":state["epoch"],"epochs":state["epochs"],"metrics":state["metrics"]}),flush=True)
+        if environment=='google_colab' and state['epoch']>state.get('balanced_evaluated_epoch',0):
+            validation={source:evaluate(trainer.last,source,'val','selection_'+source) for source in sources}
+            eligible,_,mean=detector_admission(baseline,validation)
+            selected=ROOT/'reports/colab-checkpoint-selection.json'
+            previous=json.loads(selected.read_text()) if selected.exists() else {'mean':-1}
+            if eligible and mean>previous['mean']:
+                shutil.copy2(trainer.last,run/'weights/balanced-best.pt')
+                atomic_json(selected,{'epoch':state['epoch'],'mean':mean,'validation':validation,'dataset_manifest_sha256':manifest_hash})
+            state.update(status='training',balanced_evaluated_epoch=state['epoch'])
+            publish(True)
     memory_ready()
     model=YOLO(str(run/"weights/last.pt") if args.resume else str(base_weights))
     restored_epochs=int(model.ckpt.get('epoch',-1))+1 if args.resume else 0
@@ -153,14 +170,13 @@ def main():
                     project=str(ROOT/"runs"),name="zoneguard_compact",exist_ok=True,patience=5,cache=False,amp=True,
                     mosaic=0,close_mosaic=0,scale=.3,save_period=5,plots=False,optimizer="SGD",lr0=.002)
     training_seconds=time.monotonic()-started
-    best=run/"weights/best.pt"
+    best=run/'weights/balanced-best.pt' if (run/'weights/balanced-best.pt').exists() else run/"weights/best.pt"
+    parameters=sum(parameter.numel() for parameter in model.model.parameters())
     del model;gc.collect();torch.cuda.empty_cache()
     state["status"]="evaluating";atomic_json(live,state)
     validation={source:evaluate(best,source,"val","compact_"+source+"_val") for source in sources}
-    old_mean=sum(m["mAP50_95"] for m in baseline.values())/len(sources)
-    new_mean=sum(m["mAP50_95"] for m in validation.values())/len(sources)
     # Promotion is decided on validation before looking at either test split.
-    accepted=new_mean>old_mean+.005 and all(validation[s]["mAP50_95"]>=baseline[s]["mAP50_95"]-.02 for s in sources)
+    accepted,old_mean,new_mean=detector_admission(baseline,validation)
     reference=json.loads((ROOT/"reports/parking-reference.json").read_text())
     video_scores={}
     for key,weights in (("baseline",ROOT/"models/vehicle-yolo11n.pt"),("candidate",best)):
@@ -168,12 +184,14 @@ def main():
         result=analyze(ROOT/reference["source"],output,ZoneMap.model_validate_json((ROOT/reference["zone_map"]).read_text()),weights=weights,device="0",imgsz=args.imgsz)
         if result["source_sha256"]!=reference["source_sha256"]:
             raise ValueError("Admission video was modified")
-        video_scores[key]={"class_aware":score(reference["events"],result["events"]),"alert_only":score(reference["events"],result["events"],False)}
+        video_scores[key]={"class_aware":score(reference["events"],result["events"]),"alert_only":score(reference["events"],result["events"],False),
+                           "processing_fps":result['processing_fps'],"inference_ms":result['inference_ms'],"processed_frames":result['processed_frames'],
+                           "elapsed_seconds":result['elapsed_seconds'],"includes_video_encoding":True}
         gc.collect();torch.cuda.empty_cache()
     accepted=accepted and all(video_scores["candidate"][metric]["f1"]>=video_scores["baseline"][metric]["f1"] for metric in ("class_aware","alert_only"))
     test={source:evaluate(best,source,"test","compact_"+source+"_test") for source in sources}
     report={"architecture":"YOLO11n","trained_locally":environment=='local',"execution_environment":environment,"restored_epochs":restored_epochs,
-            "torch_version":torch.__version__,"device":torch.cuda.get_device_name(0),"settings":run_settings,
+            "torch_version":torch.__version__,"parameters":parameters,"weights_bytes":best.stat().st_size,"device":torch.cuda.get_device_name(0),"settings":run_settings,
             "actual_epochs":state["epoch"],"elapsed_training_seconds":round(training_seconds,1),"elapsed_training_and_evaluation_seconds":round(time.monotonic()-started,1),"dataset_manifest_sha256":manifest_hash,
             "base_weights_sha256":sha256(base_weights),"weights_sha256":sha256(best),"baseline_validation":baseline,
             "validation":validation,"test":test,"admission_video":video_scores,"accepted":accepted,"balanced_validation_mean_before":old_mean,"balanced_validation_mean_after":new_mean,
