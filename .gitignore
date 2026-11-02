@@ -11,3 +11,4 @@ data/vehicles/
 reports/training-live.json
 /yolo*.pt
 dist/
+.colab-venv/

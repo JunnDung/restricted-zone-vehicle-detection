@@ -14,6 +14,8 @@ Mở notebook trên Colab, chọn **Thời gian chạy → Thay đổi loại th
 
 Script tái tạo VisDrone, MIO và COCO từ nguồn gốc, giữ CRLF của file nhãn/manifest Windows để kiểm được SHA-256 run cũ. Chỉ resume khi manifest compact khớp `99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0`. Không bỏ qua kiểm tra nếu khác hash. Bản sao checkpoint gốc được kiểm hash, giữ nguyên optimizer và 5 epoch đã hoàn thành; đường dẫn dataset/output được chuyển sang Colab trên một bản sao.
 
+Bootstrap dùng `.colab-venv` riêng với thư viện GPU có sẵn của Colab, cài các dependency training từ `requirements-colab.txt`; không hạ phiên bản FastAPI/Gradio của notebook kernel. Mã train/evaluate chạy trong tiến trình riêng để không trộn module Pillow đã được kernel import trước đó với phiên bản dùng khôi phục dữ liệu. CUDA build thực tế được ghi trong `reports/colab-runtime.json`.
+
 ## Thiết lập và đánh giá
 
 - YOLO11n, Ultralytics 8.3.253, 640 px, AMP, Mosaic=0, SGD; resume hướng tới tổng 15 epoch.

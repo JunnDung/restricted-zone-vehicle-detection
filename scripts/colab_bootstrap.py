@@ -2,6 +2,7 @@
 import json
 import subprocess
 import sys
+import venv
 from datetime import datetime,timezone
 from pathlib import Path
 
@@ -17,16 +18,16 @@ def status(phase,**details):
 
 def main():
     status('installing_cuda_dependencies')
-    subprocess.run([sys.executable,'-m','pip','install','torch==2.11.0','torchvision==0.26.0','--index-url','https://download.pytorch.org/whl/cu128'],check=True)
-    subprocess.run([sys.executable,'-m','pip','install','-r',str(ROOT/'requirements.txt'),'pillow==12.3.0','pyyaml==6.0.3'],check=True)
-    import torch,ultralytics,PIL
-    if not torch.cuda.is_available():
-        raise RuntimeError('CUDA is not available after installation')
-    runtime={'python':sys.version.split()[0],'torch':torch.__version__,'ultralytics':ultralytics.__version__,'pillow':PIL.__version__,
-             'gpu':torch.cuda.get_device_name(0),'gpu_memory_bytes':torch.cuda.get_device_properties(0).total_memory}
+    environment=ROOT/'.colab-venv'
+    venv.EnvBuilder(with_pip=True,system_site_packages=True).create(environment)
+    python=str(environment/'bin/python')
+    subprocess.run([python,'-m','pip','install','torch==2.11.0','torchvision==0.26.0','--index-url','https://download.pytorch.org/whl/cu128'],check=True)
+    subprocess.run([python,'-m','pip','install','-r',str(ROOT/'requirements-colab.txt')],check=True)
+    probe="import sys,json,torch,PIL,importlib.metadata as m; assert torch.cuda.is_available(), 'CUDA is not available'; print(json.dumps({'python':sys.version.split()[0],'torch':torch.__version__,'ultralytics':m.version('ultralytics'),'pillow':PIL.__version__,'gpu':torch.cuda.get_device_name(0),'gpu_memory_bytes':torch.cuda.get_device_properties(0).total_memory}))"
+    runtime=json.loads(subprocess.check_output([python,'-c',probe],text=True))
     (ROOT/'reports/colab-runtime.json').write_text(json.dumps(runtime,indent=2))
     status('restoring_dataset_and_resuming',runtime=runtime)
-    subprocess.run([sys.executable,'-u',str(ROOT/'scripts/colab_train.py')],cwd=ROOT,check=True)
+    subprocess.run([python,'-u',str(ROOT/'scripts/colab_train.py')],cwd=ROOT,check=True)
     status('completed')
 
 
