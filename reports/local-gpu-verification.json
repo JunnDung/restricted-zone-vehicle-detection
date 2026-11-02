@@ -1,0 +1,19 @@
+{
+  "verified_utc": "2026-11-02T13:58:35.689378+00:00",
+  "torch": "2.11.0+cu128",
+  "torchvision": "0.26.0+cu128",
+  "cuda": "12.8",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "cuda_available": true,
+  "matrix_operation_verified": true,
+  "api_job": "68ff1c57acfe4146a636a4d7ee931e1a",
+  "status": "completed",
+  "processed_frames": 377,
+  "event_count": 2,
+  "processing_fps": 32.78,
+  "inference_ms": 23.03,
+  "weights_sha256": "4affce6c60f7d7c4b8b75b172209938e6673fa0404037862f3395797be72cab3",
+  "device": "0",
+  "tests_passed": 30,
+  "limitation": "One sample-video run on the local RTX3060 laptop; throughput varies with load and input."
+}
