@@ -1,0 +1,801 @@
+{
+  "architecture": "YOLO11n",
+  "trained_locally": false,
+  "execution_environment": "google_colab",
+  "restored_epochs": 5,
+  "torch_version": "2.11.0+cu130",
+  "parameters": 2590815,
+  "weights_bytes": 5479112,
+  "device": "Tesla T4",
+  "settings": {
+    "dataset_manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0",
+    "epochs": 15,
+    "batch": 16,
+    "imgsz": 640,
+    "seed": 42,
+    "architecture": "YOLO11n",
+    "base_weights_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+    "mosaic": 0,
+    "optimizer": "SGD",
+    "lr0": 0.002,
+    "workers": 2,
+    "cache": false,
+    "amp": true,
+    "execution_environment": "google_colab"
+  },
+  "actual_epochs": 15,
+  "elapsed_training_seconds": 2786.6,
+  "elapsed_training_and_evaluation_seconds": 2871.8,
+  "dataset_manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0",
+  "base_weights_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+  "weights_sha256": "4affce6c60f7d7c4b8b75b172209938e6673fa0404037862f3395797be72cab3",
+  "baseline_validation": {
+    "mio": {
+      "precision": 0.44209292813094364,
+      "recall": 0.1435411954738939,
+      "mAP50": 0.14095670641260685,
+      "mAP50_95": 0.0853163838088646,
+      "speed_ms_per_image": {
+        "preprocess": 0.6789065899993147,
+        "inference": 2.864892129999589,
+        "loss": 0.0009558419992572454,
+        "postprocess": 1.1798678440000003
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.046881001274954474,
+          "AP50_95": 0.01737876700956361
+        },
+        {
+          "class": "car",
+          "AP50": 0.4111217079907024,
+          "AP50_95": 0.23875110441880082
+        },
+        {
+          "class": "truck",
+          "AP50": 0.06639184826320331,
+          "AP50_95": 0.04130153362490753
+        },
+        {
+          "class": "bus",
+          "AP50": 0.1597014827104203,
+          "AP50_95": 0.11699672502290856
+        },
+        {
+          "class": "other",
+          "AP50": 0.02068749182375374,
+          "AP50_95": 0.012153788968142386
+        }
+      ]
+    },
+    "visdrone": {
+      "precision": 0.5250701495114382,
+      "recall": 0.3922650604169539,
+      "mAP50": 0.41340935149516567,
+      "mAP50_95": 0.25537683639165765,
+      "speed_ms_per_image": {
+        "preprocess": 0.8733097160002217,
+        "inference": 3.22554313199862,
+        "loss": 0.0007970600008775364,
+        "postprocess": 2.568422301998453
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.3366266177672077,
+          "AP50_95": 0.13641193177463704
+        },
+        {
+          "class": "car",
+          "AP50": 0.7348274704142851,
+          "AP50_95": 0.4954021589924341
+        },
+        {
+          "class": "truck",
+          "AP50": 0.29297828101626644,
+          "AP50_95": 0.190136457417795
+        },
+        {
+          "class": "bus",
+          "AP50": 0.4414144102434309,
+          "AP50_95": 0.29834529825157724
+        },
+        {
+          "class": "other",
+          "AP50": 0.2611999780346379,
+          "AP50_95": 0.15658833552184476
+        }
+      ]
+    },
+    "coco": {
+      "precision": 0.13219471312632164,
+      "recall": 0.07161833743147342,
+      "mAP50": 0.0498159774954326,
+      "mAP50_95": 0.024615128675977763,
+      "speed_ms_per_image": {
+        "preprocess": 0.8620305059989732,
+        "inference": 3.81640644800018,
+        "loss": 0.0007466759984708915,
+        "postprocess": 1.3856248459997005
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.013198771185092871,
+          "AP50_95": 0.005768324777161926
+        },
+        {
+          "class": "car",
+          "AP50": 0.14276034672664117,
+          "AP50_95": 0.0684005760632847
+        },
+        {
+          "class": "truck",
+          "AP50": 0.044780917647775996,
+          "AP50_95": 0.019153948480931524
+        },
+        {
+          "class": "bus",
+          "AP50": 0.0417684036159514,
+          "AP50_95": 0.028097191569947437
+        },
+        {
+          "class": "other",
+          "AP50": 0.0065714483017015705,
+          "AP50_95": 0.0016556024885632284
+        }
+      ]
+    }
+  },
+  "validation": {
+    "mio": {
+      "precision": 0.7715379907758277,
+      "recall": 0.719460272499889,
+      "mAP50": 0.7752240860920212,
+      "mAP50_95": 0.5778862700564651,
+      "speed_ms_per_image": {
+        "preprocess": 0.7485713340010989,
+        "inference": 2.8685835780033813,
+        "loss": 0.0007591340017825132,
+        "postprocess": 1.182783683998423
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.8463856808176362,
+          "AP50_95": 0.5467101470340798
+        },
+        {
+          "class": "car",
+          "AP50": 0.8975391107729981,
+          "AP50_95": 0.6291744280095642
+        },
+        {
+          "class": "truck",
+          "AP50": 0.7074367116826199,
+          "AP50_95": 0.5219381615178448
+        },
+        {
+          "class": "bus",
+          "AP50": 0.9317844196918815,
+          "AP50_95": 0.8212798081974668
+        },
+        {
+          "class": "other",
+          "AP50": 0.4929745074949704,
+          "AP50_95": 0.3703288055233692
+        }
+      ]
+    },
+    "visdrone": {
+      "precision": 0.5341340649852111,
+      "recall": 0.3705988744800258,
+      "mAP50": 0.3932723189924564,
+      "mAP50_95": 0.23996969300947757,
+      "speed_ms_per_image": {
+        "preprocess": 0.9193126719983411,
+        "inference": 2.627679019997231,
+        "loss": 0.0008054699974309187,
+        "postprocess": 2.6280870759983372
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.31492020721655284,
+          "AP50_95": 0.12453581990193399
+        },
+        {
+          "class": "car",
+          "AP50": 0.7190009911636474,
+          "AP50_95": 0.48078297495447203
+        },
+        {
+          "class": "truck",
+          "AP50": 0.26953531715890333,
+          "AP50_95": 0.17074748249593205
+        },
+        {
+          "class": "bus",
+          "AP50": 0.4247534188942652,
+          "AP50_95": 0.28283449424406726
+        },
+        {
+          "class": "other",
+          "AP50": 0.23815166052891326,
+          "AP50_95": 0.14094769345098265
+        }
+      ]
+    },
+    "coco": {
+      "precision": 0.4976029832821701,
+      "recall": 0.4387294428459973,
+      "mAP50": 0.4437692885231296,
+      "mAP50_95": 0.2777369010353273,
+      "speed_ms_per_image": {
+        "preprocess": 0.9340202679977665,
+        "inference": 3.2293801859977975,
+        "loss": 0.000832057996376534,
+        "postprocess": 1.477724299998954
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.4566235875525078,
+          "AP50_95": 0.25170946359966245
+        },
+        {
+          "class": "car",
+          "AP50": 0.5118111652353542,
+          "AP50_95": 0.3106362913476469
+        },
+        {
+          "class": "truck",
+          "AP50": 0.32838191817650814,
+          "AP50_95": 0.19036334732423743
+        },
+        {
+          "class": "bus",
+          "AP50": 0.6350637902603327,
+          "AP50_95": 0.5024486846663154
+        },
+        {
+          "class": "other",
+          "AP50": 0.2869659813909448,
+          "AP50_95": 0.13352671823877432
+        }
+      ]
+    }
+  },
+  "baseline_test": {
+    "mio": {
+      "precision": 0.33218784036661686,
+      "recall": 0.18385482386405178,
+      "mAP50": 0.13452681775036374,
+      "mAP50_95": 0.07804071418518645,
+      "speed_ms_per_image": {
+        "preprocess": 0.9787931840037345,
+        "inference": 2.9755030140058807,
+        "loss": 0.0008729220044187969,
+        "postprocess": 1.9074190100000123
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.0998162643173418,
+          "AP50_95": 0.03783186608029296
+        },
+        {
+          "class": "car",
+          "AP50": 0.36274614782691644,
+          "AP50_95": 0.21625588435559645
+        },
+        {
+          "class": "truck",
+          "AP50": 0.09201773623584728,
+          "AP50_95": 0.05795002952784741
+        },
+        {
+          "class": "bus",
+          "AP50": 0.08263063020506131,
+          "AP50_95": 0.05300544918846345
+        },
+        {
+          "class": "other",
+          "AP50": 0.03542331016665193,
+          "AP50_95": 0.025160341773731942
+        }
+      ]
+    },
+    "visdrone": {
+      "precision": 0.5045480304708742,
+      "recall": 0.36731844363915706,
+      "mAP50": 0.37211954218861554,
+      "mAP50_95": 0.22220771409124793,
+      "speed_ms_per_image": {
+        "preprocess": 0.9455741379988467,
+        "inference": 3.1855515520019253,
+        "loss": 0.001106962003177614,
+        "postprocess": 2.4353835440033436
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.21699056184778023,
+          "AP50_95": 0.0803455997630523
+        },
+        {
+          "class": "car",
+          "AP50": 0.6344130550379762,
+          "AP50_95": 0.38131476807852466
+        },
+        {
+          "class": "truck",
+          "AP50": 0.2785747487069892,
+          "AP50_95": 0.17706616815312992
+        },
+        {
+          "class": "bus",
+          "AP50": 0.4864739807732159,
+          "AP50_95": 0.3255978800413765
+        },
+        {
+          "class": "other",
+          "AP50": 0.2441453645771162,
+          "AP50_95": 0.1467141544201563
+        }
+      ]
+    },
+    "coco": {
+      "precision": 0.13159748979745686,
+      "recall": 0.07649348912228629,
+      "mAP50": 0.04750665804168688,
+      "mAP50_95": 0.023088209111162314,
+      "speed_ms_per_image": {
+        "preprocess": 1.1899541959937778,
+        "inference": 3.692346539997743,
+        "loss": 0.007028370002444717,
+        "postprocess": 1.9372991999935039
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.011757315133890115,
+          "AP50_95": 0.006029102828804277
+        },
+        {
+          "class": "car",
+          "AP50": 0.13573204614223017,
+          "AP50_95": 0.06506530684778901
+        },
+        {
+          "class": "truck",
+          "AP50": 0.04145234726084514,
+          "AP50_95": 0.018198700333673202
+        },
+        {
+          "class": "bus",
+          "AP50": 0.04060808178220836,
+          "AP50_95": 0.021872335580915808
+        },
+        {
+          "class": "other",
+          "AP50": 0.007983499889260646,
+          "AP50_95": 0.004275599964629268
+        }
+      ]
+    }
+  },
+  "test": {
+    "mio": {
+      "precision": 0.7636041327607843,
+      "recall": 0.7503893002604869,
+      "mAP50": 0.7964300136730934,
+      "mAP50_95": 0.5916257368532449,
+      "speed_ms_per_image": {
+        "preprocess": 0.7049823039997136,
+        "inference": 2.8874283939985617,
+        "loss": 0.0008110519993351772,
+        "postprocess": 1.177098763995673
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.9199394464602891,
+          "AP50_95": 0.5934893601387115
+        },
+        {
+          "class": "car",
+          "AP50": 0.8815031971917761,
+          "AP50_95": 0.6121620119859947
+        },
+        {
+          "class": "truck",
+          "AP50": 0.728409271050619,
+          "AP50_95": 0.5201291178391955
+        },
+        {
+          "class": "bus",
+          "AP50": 0.9076854203181084,
+          "AP50_95": 0.8245285427679689
+        },
+        {
+          "class": "other",
+          "AP50": 0.5446127333446749,
+          "AP50_95": 0.40781965153435396
+        }
+      ]
+    },
+    "visdrone": {
+      "precision": 0.4710433575973072,
+      "recall": 0.3507271831155,
+      "mAP50": 0.34422769465411546,
+      "mAP50_95": 0.2014128318595102,
+      "speed_ms_per_image": {
+        "preprocess": 0.9760311859954527,
+        "inference": 2.9412606959958794,
+        "loss": 0.0008184059897757834,
+        "postprocess": 2.6516195500025788
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.19535329531242224,
+          "AP50_95": 0.07088732579333273
+        },
+        {
+          "class": "car",
+          "AP50": 0.608488125844851,
+          "AP50_95": 0.3621070897989875
+        },
+        {
+          "class": "truck",
+          "AP50": 0.24632557978353933,
+          "AP50_95": 0.1555201856115304
+        },
+        {
+          "class": "bus",
+          "AP50": 0.44974035646277183,
+          "AP50_95": 0.2903154415776535
+        },
+        {
+          "class": "other",
+          "AP50": 0.2212311158669928,
+          "AP50_95": 0.12823411651604702
+        }
+      ]
+    },
+    "coco": {
+      "precision": 0.6277863611483224,
+      "recall": 0.41699077293039677,
+      "mAP50": 0.4518136565744273,
+      "mAP50_95": 0.2933546527692149,
+      "speed_ms_per_image": {
+        "preprocess": 0.8871442780000507,
+        "inference": 3.360089316005542,
+        "loss": 0.0007500639985664748,
+        "postprocess": 1.6480954000107886
+      },
+      "per_class": [
+        {
+          "class": "motorcycle",
+          "AP50": 0.499170460713912,
+          "AP50_95": 0.275048548780461
+        },
+        {
+          "class": "car",
+          "AP50": 0.5225770619627486,
+          "AP50_95": 0.3143846050084619
+        },
+        {
+          "class": "truck",
+          "AP50": 0.3599072573926601,
+          "AP50_95": 0.22626039586618693
+        },
+        {
+          "class": "bus",
+          "AP50": 0.6595053514866062,
+          "AP50_95": 0.5366774106058234
+        },
+        {
+          "class": "other",
+          "AP50": 0.21790815131620975,
+          "AP50_95": 0.11440230358514132
+        }
+      ]
+    }
+  },
+  "admission_video": {
+    "baseline": {
+      "class_aware": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 2,
+              "class": "car",
+              "confidence": 0.5333,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.4566889504591624,
+                0.723184656213831
+              ],
+              "id": "a5a042420fde4aa09df217a4a6dc47a0",
+              "analyzed_utc": "2026-11-02T12:58:41.895157+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/a5a042420fde4aa09df217a4a6dc47a0.jpg"
+            }
+          }
+        ],
+        "false_positives": [
+          {
+            "track_id": 8,
+            "class": "truck",
+            "confidence": 0.8489,
+            "zone_id": "gate",
+            "zone_name": "Lối vào hạn chế",
+            "severity": "high",
+            "entered_seconds": 16.72,
+            "confirmed_seconds": 17.12,
+            "kind": "entry",
+            "point": [
+              0.5077943205833435,
+              0.7227749294704862
+            ],
+            "id": "ae723d18fe494a069c50902e2415c092",
+            "analyzed_utc": "2026-11-02T12:58:44.106891+00:00",
+            "frame_index": 214,
+            "evidence": "evidence/ae723d18fe494a069c50902e2415c092.jpg"
+          }
+        ],
+        "missed": [
+          {
+            "vehicle": "red-car",
+            "class": "car",
+            "zone_id": "gate",
+            "min_seconds": 16.2,
+            "max_seconds": 18.2
+          }
+        ]
+      },
+      "alert_only": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 2,
+              "class": "car",
+              "confidence": 0.5333,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.4566889504591624,
+                0.723184656213831
+              ],
+              "id": "a5a042420fde4aa09df217a4a6dc47a0",
+              "analyzed_utc": "2026-11-02T12:58:41.895157+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/a5a042420fde4aa09df217a4a6dc47a0.jpg"
+            }
+          },
+          {
+            "expected": {
+              "vehicle": "red-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 16.2,
+              "max_seconds": 18.2
+            },
+            "predicted": {
+              "track_id": 8,
+              "class": "truck",
+              "confidence": 0.8489,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 16.72,
+              "confirmed_seconds": 17.12,
+              "kind": "entry",
+              "point": [
+                0.5077943205833435,
+                0.7227749294704862
+              ],
+              "id": "ae723d18fe494a069c50902e2415c092",
+              "analyzed_utc": "2026-11-02T12:58:44.106891+00:00",
+              "frame_index": 214,
+              "evidence": "evidence/ae723d18fe494a069c50902e2415c092.jpg"
+            }
+          }
+        ],
+        "false_positives": [],
+        "missed": []
+      },
+      "processing_fps": 27.93,
+      "inference_ms": 14.79,
+      "processed_frames": 377,
+      "elapsed_seconds": 13.5,
+      "includes_video_encoding": true
+    },
+    "candidate": {
+      "class_aware": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 1,
+              "class": "car",
+              "confidence": 0.6093,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.4545024832089742,
+                0.7107156117757162
+              ],
+              "id": "20b48d1264a84912a753c214f8f16607",
+              "analyzed_utc": "2026-11-02T12:58:55.462974+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/20b48d1264a84912a753c214f8f16607.jpg"
+            }
+          },
+          {
+            "expected": {
+              "vehicle": "red-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 16.2,
+              "max_seconds": 18.2
+            },
+            "predicted": {
+              "track_id": 5,
+              "class": "car",
+              "confidence": 0.9508,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 16.72,
+              "confirmed_seconds": 17.12,
+              "kind": "entry",
+              "point": [
+                0.5074723561604818,
+                0.7113264578360098
+              ],
+              "id": "8b6ed5b159a84dc784b962b206bdf058",
+              "analyzed_utc": "2026-11-02T12:58:57.755103+00:00",
+              "frame_index": 214,
+              "evidence": "evidence/8b6ed5b159a84dc784b962b206bdf058.jpg"
+            }
+          }
+        ],
+        "false_positives": [],
+        "missed": []
+      },
+      "alert_only": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 1,
+              "class": "car",
+              "confidence": 0.6093,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.4545024832089742,
+                0.7107156117757162
+              ],
+              "id": "20b48d1264a84912a753c214f8f16607",
+              "analyzed_utc": "2026-11-02T12:58:55.462974+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/20b48d1264a84912a753c214f8f16607.jpg"
+            }
+          },
+          {
+            "expected": {
+              "vehicle": "red-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 16.2,
+              "max_seconds": 18.2
+            },
+            "predicted": {
+              "track_id": 5,
+              "class": "car",
+              "confidence": 0.9508,
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 16.72,
+              "confirmed_seconds": 17.12,
+              "kind": "entry",
+              "point": [
+                0.5074723561604818,
+                0.7113264578360098
+              ],
+              "id": "8b6ed5b159a84dc784b962b206bdf058",
+              "analyzed_utc": "2026-11-02T12:58:57.755103+00:00",
+              "frame_index": 214,
+              "evidence": "evidence/8b6ed5b159a84dc784b962b206bdf058.jpg"
+            }
+          }
+        ],
+        "false_positives": [],
+        "missed": []
+      },
+      "processing_fps": 28.1,
+      "inference_ms": 14.67,
+      "processed_frames": 377,
+      "elapsed_seconds": 13.42,
+      "includes_video_encoding": true
+    }
+  },
+  "accepted": true,
+  "balanced_validation_mean_before": 0.1217694496255,
+  "balanced_validation_mean_after": 0.36519762136709,
+  "promotion_rule": "mean val mAP50-95 improves >0.005; no source val falls more than 0.02; neither alert nor class-aware F1 regresses on the admission video. Selection made before test evaluation.",
+  "limitations": "Curated, class-covered subset; not official dataset benchmark. COCO val halves were not fine-tuned on, but COCO pretrained model development used COCO. MIO camera-disjointness is unverified; near duplicates may remain. Images retain original licenses; MIO noncommercial and VisDrone author terms apply. Detector metrics do not measure zone violations. Camera-specific video verification is still required."
+}

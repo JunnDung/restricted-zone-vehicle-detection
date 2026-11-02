@@ -1,0 +1,8 @@
+{
+  "executed_source_sha256": {
+    "scripts/train_large.py": "31a1a292f9a8e21d1335dc04395c80abd49536c36f4dd9520f4512c53700083c",
+    "scripts/colab_train.py": "3ef37b5ef54c0da9e3da6a1de2ce30ef9fb7c3c0f348604b7a92b9fc4a718cc5",
+    "scripts/restore_compact.py": "13f84bbc166b8e1304254d12b9dae19d60b2c0d7cde6395556d9fa0beeb20a35"
+  },
+  "package_sha256": "91d5829965f2456c905f7d1f138a73d79c8eec3cbd971fda3a6222550f4eaaa9"
+}

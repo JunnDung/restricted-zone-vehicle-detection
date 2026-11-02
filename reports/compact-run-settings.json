@@ -1,7 +1,7 @@
 {
   "dataset_manifest_sha256": "99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0",
   "epochs": 15,
-  "batch": 4,
+  "batch": 16,
   "imgsz": 640,
   "seed": 42,
   "architecture": "YOLO11n",
@@ -9,7 +9,8 @@
   "mosaic": 0,
   "optimizer": "SGD",
   "lr0": 0.002,
-  "workers": 0,
+  "workers": 2,
   "cache": false,
-  "amp": true
+  "amp": true,
+  "execution_environment": "google_colab"
 }
