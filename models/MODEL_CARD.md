@@ -1,5 +1,17 @@
 # Model card — ZoneGuard
 
+## Model mặc định được nghiệm thu · 02/11/2026
+
+`vehicle-large.pt` hiện được chọn mặc định trên dashboard: **YOLO11n**, 2.590.815 tham số, 5.479.112 byte (5,23 MiB), SHA-256 `4affce6c60f7d7c4b8b75b172209938e6673fa0404037862f3395797be72cab3`. Khóa API `large` giữ để tương thích; không biểu thị YOLO11s. Bản inference mới đã bỏ optimizer; checkpoint huấn luyện được lưu riêng.
+
+Hoàn tất 15 epoch: 5 trên laptop, 10 tiếp tục trên Tesla T4; batch 4→16, workers 0→2, 640px, Mosaic=0, AMP, SGD lr0=0,002. Colab: Ultralytics 8.3.253, torch 2.11.0+cu130, Python 3.13.16. Không coi đây là tái hiện bitwise giữa Windows/Linux.
+
+Test chọn lọc 500 ảnh mỗi nguồn: mAP50–95 MIO 59,16%, VisDrone 20,14%, COCO 29,34%; trung bình đều nguồn 36,21% so với baseline 10,78%. **VisDrone test giảm 2,08 điểm %**; giới hạn giảm 0,02 trong nghiệm thu áp dụng validation. Không bảo đảm từng test nguồn tăng. Chi tiết từng lớp/nguồn ở `reports/compact-training.json`.
+
+Video bãi xe 377 khung: cả hai lượt gán car, F1 có xét lớp 1,00 so với baseline 0,50. Pipeline T4 28,10 FPS tính xuất H.264, một lần chạy. Hai lượt chỉ kiểm hồi quy; cần dữ liệu có nhãn từ camera triển khai để đo độ chính xác cảnh báo. COCO/VisDrone từng xuất hiện trong phát triển model gốc, split MIO chưa chứng minh độc lập camera.
+
+[Case study](../docs/CASE_STUDY.md) · [Colab](../docs/COLAB.md) · [Manifest nén](../data/compact-manifest.json.gz). Đợt replay dự kiến được bỏ qua vì run chính đạt validation; không có thêm epoch hoặc chọn model bằng test. Các phần dưới giữ lịch sử checkpoint ban đầu.
+
 ## Checkpoint dùng được ngay
 
 `vehicle-yolo11n.pt` là YOLO11n, fine-tune từ COCO trong dự án cùng máy `D:\ComputerVision\NhanDangPhuongTien` (commit nguồn `3b5ce0645801d5a4f4aa0e31dadb990cbea57f9c`). Bản sao giữ nguyên trọng số, SHA-256 `819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc`.

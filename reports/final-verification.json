@@ -1,0 +1,48 @@
+{
+  "verified_utc": "2026-11-02T13:48:17.218331+00:00",
+  "environment": "Windows CPU; T4 training completed separately",
+  "device": "cpu",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "api_job_status": "completed",
+  "api_job_id": "a9e96e37974e40e691b15c20605f82b7",
+  "default_model": "large",
+  "weights_sha256": "4affce6c60f7d7c4b8b75b172209938e6673fa0404037862f3395797be72cab3",
+  "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+  "processed_frames": 377,
+  "event_count": 2,
+  "class_aware_event_f1": 1.0,
+  "processing_fps": 17.9,
+  "inference_ms": 45.46,
+  "artifacts": {
+    "annotated.mp4": {
+      "http_status": 200,
+      "bytes": 1448860
+    },
+    "events.csv": {
+      "http_status": 200,
+      "bytes": 492
+    },
+    "result.json": {
+      "http_status": 200,
+      "bytes": 2882
+    },
+    "preview.jpg": {
+      "http_status": 200,
+      "bytes": 36416
+    }
+  },
+  "events": [
+    {
+      "class": "car",
+      "confirmed_seconds": 6.56
+    },
+    {
+      "class": "car",
+      "confirmed_seconds": 17.12
+    }
+  ],
+  "test_count": 30,
+  "python_dependency_check": "uv pip check passed",
+  "javascript_syntax_check": "node --check web/app.js passed",
+  "limitations": "One CPU video run with 2 calibration events, not an independent field accuracy benchmark. Browser UI was not reverified in this final check."
+}

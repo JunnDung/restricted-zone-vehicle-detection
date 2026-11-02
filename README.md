@@ -6,7 +6,28 @@
 
 ![Dashboard ZoneGuard đã chạy hết video mẫu](reports/dashboard.png)
 
+## Kết quả mới · Colab T4, 02/11/2026
+
+Hoàn tất **15 epoch** (5 laptop + 10 tiếp tục trên Colab), nghiệm thu checkpoint và tích hợp vào dashboard. Dữ liệu gồm **12.000 train / 1.500 validation / 1.500 test**; giữ manifest và hash trọng số để kiểm chứng.
+
+| Test chọn lọc · mAP50–95 | Baseline | Model mới |
+|---|---:|---:|
+| MIO | 7,80% | **59,16%** |
+| VisDrone | 22,22% | **20,14%** |
+| COCO vehicles | 2,31% | **29,34%** |
+| Trung bình đều ba nguồn | 10,78% | **36,21% (+25,44 điểm %)** |
+
+**Đánh đổi:** VisDrone test giảm 2,08 điểm %. Quy tắc nghiệm thu dùng validation, không chọn model bằng test. Video bãi xe chỉ có hai lượt: F1 có xét loại xe 0,50 → 1,00, chưa phải độ chính xác ngoài thực địa. Pipeline đủ 377 khung và xuất H.264 đạt **28,10 FPS trên T4** trong một lần chạy. Model có **2.590.815 tham số**, checkpoint inference **5,23 MiB**.
+
+[Case study + CV tiếng Anh](docs/CASE_STUDY.md) · [CV tiếng Việt](docs/CV.md) · [Notebook Colab](notebooks/ZoneGuard_Colab.ipynb) · [Hướng dẫn Colab](docs/COLAB.md) · [Kết quả JSON](reports/compact-training.json)
+
+![Learning curve và kết quả test](reports/portfolio-results.png)
+
 ## Chạy tại Windows
+
+Demo model mới: [MP4 có overlay](reports/demo-colab-model.mp4), [kiểm chứng API](reports/final-verification.json). Trên Windows CPU: 377 khung, 2 cảnh báo đúng car, **17,90 FPS** gồm xuất video; một lần chạy khác đạt 16,51 FPS, không coi đây là benchmark ổn định.
+
+Dashboard chọn model mới tự động. CLI cần `--model large`; API dùng `model_key: "large"`. Mặc định CLI/API được giữ tương thích checkpoint cũ.
 
 Sau khi cài môi trường, nhấp `run.cmd`, mở **http://127.0.0.1:8003**. Server dùng một nguồn và một tiến trình; giữ cửa sổ server khi sử dụng. Bản clone không chứa `.venv`, dataset hoặc lịch sử runtime của máy cũ.
 
@@ -56,10 +77,11 @@ Dataset/venv/log/runtime không đẩy GitHub. Repository giữ script, manifest
 
 | Kiểm tra | Kết quả |
 |---|---|
-| Quy tắc vùng, validation API, lưu lịch sử, lớp nhãn, chống tranh GPU, ảnh preview, khóa tệp Windows, hash và độ tin cậy xác nhận | 23 kiểm thử unittest đạt |
+| Quy tắc vùng, API, lưu lịch sử, chống tranh GPU, hash, phục hồi Colab và báo cáo | Xem CI và báo cáo kiểm chứng hiện tại |
 | Checkpoint nguồn VisDrone 5 lớp, test-dev sau chuyển đổi | mAP50 37,54%; mAP50–95 22,24% |
 | Video bãi xe Intel, 377 khung, cấu hình mặc định | Hai cảnh báo tại 6,56 s và 17,12 s |
-| Phân loại hai cảnh báo | Xe trắng đúng car; xe đỏ bị nhầm truck |
+| Phân loại hai cảnh báo · baseline | Xe trắng đúng car; xe đỏ bị nhầm truck |
+| Phân loại hai cảnh báo · model mới | Cả hai gán car; F1 có xét loại xe 1,00 trên 2 lượt |
 | YOLO11n/YOLO11s COCO trên cùng video | 0 cảnh báo |
 | Dashboard | Vẽ ROI, lịch sử, ảnh bằng chứng, phát MP4/H.264, bố cục desktop/mobile được kiểm tra trong trình duyệt |
 
