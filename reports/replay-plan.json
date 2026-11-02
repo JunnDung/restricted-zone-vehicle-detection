@@ -1,0 +1,27 @@
+{
+  "declared_utc": "2026-11-02T12:47:29.102561+00:00",
+  "trigger": "Initial trial fails the original per-source validation admission rule; no test score is used in this decision",
+  "diagnostic": {
+    "checkpoint_epoch": 8,
+    "source": "visdrone/val",
+    "images": 500,
+    "diagnostic_device": "CPU",
+    "mAP50_95": 0.23020548528268758,
+    "baseline_T4_mAP50_95": 0.2554
+  },
+  "epochs": 3,
+  "batch": 16,
+  "workers": 2,
+  "imgsz": 640,
+  "lr0": 0.0005,
+  "warmup_epochs": 0.5,
+  "warmup_bias_lr": 0.0005,
+  "scale": 0.1,
+  "mosaic": 0,
+  "optimizer": "SGD",
+  "sampling": "5000 observations per source per epoch; VisDrone train images repeat deterministically; no heldout image is sampled",
+  "unique_train_images": 12000,
+  "observations_per_epoch": 15000,
+  "admission_rule": "Unchanged: mean validation gain >0.005, every source drop <=0.02, parking-video F1 does not regress",
+  "max_additional_trials": 1
+}
