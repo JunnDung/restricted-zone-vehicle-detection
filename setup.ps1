@@ -16,7 +16,8 @@ $projectPython = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
 & $projectPython -m ensurepip --upgrade; Check-Exit
 & $projectPython -m pip install --upgrade pip; Check-Exit
 $torchIndex = if ($Cuda) { 'https://download.pytorch.org/whl/cu128' } else { 'https://download.pytorch.org/whl/cpu' }
-& $projectPython -m pip install torch==2.11.0 torchvision==0.26.0 --index-url $torchIndex; Check-Exit
+$torchBuild = if ($Cuda) { '+cu128' } else { '+cpu' }
+& $projectPython -m pip install ('torch==2.11.0' + $torchBuild) ('torchvision==0.26.0' + $torchBuild) --index-url $torchIndex; Check-Exit
 & $projectPython -m pip install -r requirements-lock.txt; Check-Exit
 & $projectPython -m pip check; Check-Exit
 & $projectPython -m unittest discover -s tests -v; Check-Exit

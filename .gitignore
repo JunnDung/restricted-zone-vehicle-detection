@@ -10,3 +10,4 @@ data/vehicles/
 .env
 reports/training-live.json
 /yolo*.pt
+dist/

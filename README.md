@@ -8,7 +8,7 @@
 
 ## Chạy tại Windows
 
-Máy hiện tại đã có môi trường CUDA tại `.venv`. Nhấp `run.cmd`, mở **http://127.0.0.1:8003**. Server dùng một nguồn và một tiến trình; giữ cửa sổ server khi sử dụng.
+Sau khi cài môi trường, nhấp `run.cmd`, mở **http://127.0.0.1:8003**. Server dùng một nguồn và một tiến trình; giữ cửa sổ server khi sử dụng. Bản clone không chứa `.venv`, dataset hoặc lịch sử runtime của máy cũ.
 
 Trên máy mới cần Python 3.12, internet khi cài dependency, sau đó chạy PowerShell tại thư mục dự án:
 

@@ -38,6 +38,12 @@ def main():
             with (run/'results.csv').open('w',newline='') as file:
                 writer=csv.writer(file);writer.writerow(history)
                 writer.writerows(zip(*history.values()))
+    else:
+        checkpoint=torch.load(last,map_location='cpu',weights_only=False)
+        if checkpoint['epoch']+1<pause['completed_epochs'] or checkpoint.get('optimizer') is None:
+            raise ValueError('Recovery checkpoint is incomplete or training already finished')
+        checkpoint['train_args'].update(data=str(ROOT/'datasets/compact/data.yaml'),project=str(ROOT/'runs'),name='zoneguard_compact',save_dir=str(run))
+        torch.save(checkpoint,last)
     os.environ['ZONEGUARD_TRAINING_ENV']='google_colab'
     subprocess.run([sys.executable,'-u',str(ROOT/'scripts/train_large.py'),'--resume','--batch','16','--workers','2'],cwd=ROOT,check=True)
 
