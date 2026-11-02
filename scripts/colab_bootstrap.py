@@ -19,7 +19,8 @@ def status(phase,**details):
 def main():
     status('installing_cuda_dependencies')
     environment=ROOT/'.colab-venv'
-    venv.EnvBuilder(with_pip=True,system_site_packages=True).create(environment)
+    # Colab may omit ensurepip; pip is inherited without changing the kernel packages.
+    venv.EnvBuilder(with_pip=False,system_site_packages=True).create(environment)
     python=str(environment/'bin/python')
     subprocess.run([python,'-m','pip','install','torch==2.11.0','torchvision==0.26.0','--index-url','https://download.pytorch.org/whl/cu128'],check=True)
     subprocess.run([python,'-m','pip','install','-r',str(ROOT/'requirements-colab.txt')],check=True)

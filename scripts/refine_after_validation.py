@@ -7,11 +7,19 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from datetime import datetime,timezone
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def mark(phase,**details):
+    path=ROOT/'reports/colab-refinement.json';temporary=path.with_suffix('.tmp')
+    temporary.write_text(json.dumps({'phase':phase,'updated_utc':datetime.now(timezone.utc).isoformat(),**details},indent=2))
+    temporary.replace(path)
+
+
 def main():
+    mark('waiting_for_initial_validation')
     deadline=time.monotonic()+4*3600
     status=ROOT/'reports/colab-bootstrap.json'
     while time.monotonic()<deadline:
@@ -29,6 +37,7 @@ def main():
     initial=json.loads(original.read_text())
     eligible,_,_=detector_admission(initial['baseline_validation'],initial['validation'])
     if eligible:
+        mark('skipped',reason='Initial per-source validation already passes')
         print('Source validation already passes; the extra trial is skipped',flush=True)
         return
     plan=json.loads((ROOT/'reports/replay-plan.json').read_text())
@@ -40,6 +49,7 @@ def main():
     shutil.copy2(original,archived)
     shutil.copy2(ROOT/'reports/compact-training-curve.csv',ROOT/'reports/colab-initial-training-curve.csv')
     os.environ['ZONEGUARD_TRAINING_ENV']='google_colab'
+    mark('training_source_replay')
     subprocess.run([sys.executable,'-u',str(ROOT/'scripts/train_large.py'),'--replay','--epochs','3','--batch','16','--workers','2'],cwd=ROOT,check=True)
     result=json.loads((ROOT/'reports/replay-training.json').read_text())
     result['current_stage_epochs']=result['actual_epochs']
@@ -59,8 +69,12 @@ def main():
     live=ROOT/'reports/training-live.json';state=json.loads(live.read_text())
     state.update(epoch=result['actual_epochs'],epochs=result['actual_epochs'],report='reports/compact-training.json')
     live.write_text(json.dumps(state,indent=2),encoding='utf-8')
+    mark('completed',accepted=result['accepted'],total_epochs=result['actual_epochs'])
     print('Completed validation-driven refinement',flush=True)
 
 
 if __name__=='__main__':
-    main()
+    try:
+        main()
+    except Exception as error:
+        mark('error',error=str(error));raise
