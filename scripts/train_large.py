@@ -13,6 +13,7 @@ from pathlib import Path
 os.environ["YOLO_VERBOSE"]="False"
 import torch
 from ultralytics import YOLO
+from ultralytics.utils.torch_utils import strip_optimizer
 
 from data_utils import sha256, verify_files, memory_headroom_mb
 
@@ -172,6 +173,9 @@ def main():
     training_seconds=time.monotonic()-started
     best=run/'weights/balanced-best.pt' if (run/'weights/balanced-best.pt').exists() else run/"weights/best.pt"
     parameters=sum(parameter.numel() for parameter in model.model.parameters())
+    deployment=run/'weights/deployment.pt'
+    strip_optimizer(str(best),s=str(deployment))
+    best=deployment
     del model;gc.collect();torch.cuda.empty_cache()
     state["status"]="evaluating";atomic_json(live,state)
     validation={source:evaluate(best,source,"val","compact_"+source+"_val") for source in sources}
@@ -189,12 +193,13 @@ def main():
                            "elapsed_seconds":result['elapsed_seconds'],"includes_video_encoding":True}
         gc.collect();torch.cuda.empty_cache()
     accepted=accepted and all(video_scores["candidate"][metric]["f1"]>=video_scores["baseline"][metric]["f1"] for metric in ("class_aware","alert_only"))
+    baseline_test={source:evaluate(base_weights,source,"test","compact_baseline_"+source+"_test") for source in sources}
     test={source:evaluate(best,source,"test","compact_"+source+"_test") for source in sources}
     report={"architecture":"YOLO11n","trained_locally":environment=='local',"execution_environment":environment,"restored_epochs":restored_epochs,
             "torch_version":torch.__version__,"parameters":parameters,"weights_bytes":best.stat().st_size,"device":torch.cuda.get_device_name(0),"settings":run_settings,
             "actual_epochs":state["epoch"],"elapsed_training_seconds":round(training_seconds,1),"elapsed_training_and_evaluation_seconds":round(time.monotonic()-started,1),"dataset_manifest_sha256":manifest_hash,
             "base_weights_sha256":sha256(base_weights),"weights_sha256":sha256(best),"baseline_validation":baseline,
-            "validation":validation,"test":test,"admission_video":video_scores,"accepted":accepted,"balanced_validation_mean_before":old_mean,"balanced_validation_mean_after":new_mean,
+            "validation":validation,"baseline_test":baseline_test,"test":test,"admission_video":video_scores,"accepted":accepted,"balanced_validation_mean_before":old_mean,"balanced_validation_mean_after":new_mean,
             "promotion_rule":"mean val mAP50-95 improves >0.005; no source val falls more than 0.02; neither alert nor class-aware F1 regresses on the admission video. Selection made before test evaluation.",
             "limitations":limitations+" Detector metrics do not measure zone violations. Camera-specific video verification is still required."}
     atomic_json(ROOT/"reports/compact-training.json",report)
