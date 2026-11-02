@@ -33,12 +33,14 @@ def main():
     parser.add_argument("--data",type=Path,default=ROOT/"datasets/compact")
     parser.add_argument("--epochs",type=int,default=15)
     parser.add_argument("--batch",type=int,default=4)
+    parser.add_argument("--workers",type=int,choices=[0,2],default=0)
     parser.add_argument("--imgsz",type=int,choices=[640,960],default=640)
     parser.add_argument("--resume",action="store_true")
     parser.add_argument("--backup-github",action="store_true")
     args=parser.parse_args()
     if not torch.cuda.is_available():
         parser.error("Local CUDA GPU required; install setup.ps1 -Cuda")
+    environment=os.environ.get('ZONEGUARD_TRAINING_ENV','local')
     if not 1<=args.epochs<=200 or not 1<=args.batch<=32:
         parser.error("epochs 1–200, batch 1–32")
     data=args.data.resolve();run=ROOT/"runs/zoneguard_compact"
@@ -54,19 +56,20 @@ def main():
     limitations=manifest["limitations"]
     base_weights=ROOT/"models/vehicle-yolo11n.pt"
     run_settings={"dataset_manifest_sha256":manifest_hash,"epochs":args.epochs,"batch":args.batch,"imgsz":args.imgsz,"seed":42,
-                  "architecture":"YOLO11n","base_weights_sha256":sha256(base_weights),"mosaic":0,"optimizer":"SGD","lr0":.002,"workers":0,"cache":False,"amp":True}
+                  "architecture":"YOLO11n","base_weights_sha256":sha256(base_weights),"mosaic":0,"optimizer":"SGD","lr0":.002,"workers":args.workers,"cache":False,"amp":True}
     saved=ROOT/"reports/compact-run-settings.json"
     if args.resume:
         old=json.loads(saved.read_text())
-        if any(old.get(k)!=run_settings[k] for k in ("dataset_manifest_sha256","imgsz","batch","architecture","base_weights_sha256")):
-            parser.error("Resume dataset, model, batch and image size must match the original run")
-        run_settings=old
+        if any(old.get(k)!=run_settings[k] for k in ("dataset_manifest_sha256","imgsz","architecture","base_weights_sha256")):
+            parser.error("Resume dataset, model and image size must match the original run")
+        run_settings={**old,"batch":args.batch,"workers":args.workers,"execution_environment":environment}
+        atomic_json(saved,run_settings)
     else:
         atomic_json(saved,run_settings)
     torch.set_num_threads(4)
     live=ROOT/"reports/training-live.json"
     state={"status":"verifying","started_utc":datetime.now(timezone.utc).isoformat(),"device":torch.cuda.get_device_name(0),"epochs":args.epochs,"epoch":0,
-           "dataset_manifest_sha256":manifest_hash,"train_images":sum(n for k,n in manifest["usable_images"].items() if k.endswith("/train"))}
+           "execution_environment":environment,"dataset_manifest_sha256":manifest_hash,"train_images":sum(n for k,n in manifest["usable_images"].items() if k.endswith("/train"))}
     atomic_json(live,state)
     last_update=0.0
     def publish(force=False):
@@ -96,7 +99,7 @@ def main():
         atomic_json(live,state)
         time.sleep(10)
     state["status"]="evaluating";atomic_json(live,state)
-    baseline_report=ROOT/"reports/compact-baseline-validation.json"
+    baseline_report=ROOT/"reports"/("colab-baseline-validation.json" if environment=='google_colab' else "compact-baseline-validation.json")
     def validation_callbacks(model,source,split):
         def start(validator):
             state.update(status="evaluating",evaluation_source=source,evaluation_split=split,batch=0,batches=len(validator.dataloader))
@@ -112,11 +115,11 @@ def main():
         model=YOLO(str(weights))
         validation_callbacks(model,source,split)
         try:
-            return metrics_dict(model.val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=0,
+            return metrics_dict(model.val(data=str(data/(source+".yaml")),split=split,imgsz=args.imgsz,batch=args.batch,device="0",workers=args.workers,
                                           project=str(ROOT/"runs"),name=name,exist_ok=True,plots=False,verbose=False))
         finally:
             del model;gc.collect();torch.cuda.empty_cache()
-    if not args.resume:
+    if not args.resume or not baseline_report.exists():
         baseline={source:evaluate(base_weights,source,"val","compact_baseline_"+source+"_val") for source in sources}
         atomic_json(baseline_report,{"dataset_manifest_sha256":manifest_hash,"metrics":baseline})
     else:
@@ -136,15 +139,17 @@ def main():
         print(json.dumps({"epoch":state["epoch"],"epochs":state["epochs"],"metrics":state["metrics"]}),flush=True)
     memory_ready()
     model=YOLO(str(run/"weights/last.pt") if args.resume else str(base_weights))
+    restored_epochs=int(model.ckpt.get('epoch',-1))+1 if args.resume else 0
+    state['epoch']=restored_epochs
     model.add_callback("on_train_epoch_start",epoch_start)
     model.add_callback("on_train_batch_end",batch_end)
     model.add_callback("on_fit_epoch_end",epoch_end)
     validation_callbacks(model,"three_sources","val")
     started=time.monotonic()
     if args.resume:
-        model.train(resume=True,device="0",workers=0)
+        model.train(resume=True,device="0",batch=args.batch,workers=args.workers)
     else:
-        model.train(data=str(data/"data.yaml"),epochs=args.epochs,batch=args.batch,imgsz=args.imgsz,device="0",workers=0,seed=42,deterministic=True,
+        model.train(data=str(data/"data.yaml"),epochs=args.epochs,batch=args.batch,imgsz=args.imgsz,device="0",workers=args.workers,seed=42,deterministic=True,
                     project=str(ROOT/"runs"),name="zoneguard_compact",exist_ok=True,patience=5,cache=False,amp=True,
                     mosaic=0,close_mosaic=0,scale=.3,save_period=5,plots=False,optimizer="SGD",lr0=.002)
     training_seconds=time.monotonic()-started
@@ -167,7 +172,8 @@ def main():
         gc.collect();torch.cuda.empty_cache()
     accepted=accepted and all(video_scores["candidate"][metric]["f1"]>=video_scores["baseline"][metric]["f1"] for metric in ("class_aware","alert_only"))
     test={source:evaluate(best,source,"test","compact_"+source+"_test") for source in sources}
-    report={"architecture":"YOLO11n","trained_locally":True,"device":torch.cuda.get_device_name(0),"settings":run_settings,
+    report={"architecture":"YOLO11n","trained_locally":environment=='local',"execution_environment":environment,"restored_epochs":restored_epochs,
+            "torch_version":torch.__version__,"device":torch.cuda.get_device_name(0),"settings":run_settings,
             "actual_epochs":state["epoch"],"elapsed_training_seconds":round(training_seconds,1),"elapsed_training_and_evaluation_seconds":round(time.monotonic()-started,1),"dataset_manifest_sha256":manifest_hash,
             "base_weights_sha256":sha256(base_weights),"weights_sha256":sha256(best),"baseline_validation":baseline,
             "validation":validation,"test":test,"admission_video":video_scores,"accepted":accepted,"balanced_validation_mean_before":old_mean,"balanced_validation_mean_after":new_mean,
