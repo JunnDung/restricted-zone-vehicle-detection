@@ -6,19 +6,20 @@ from types import SimpleNamespace
 from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
+import train_large
 from restore_compact import archived_writer
-from train_large import metrics_dict, detector_admission, source_replay
+from train_large import metrics_dict, detector_admission
 
 
 class ColabRecoveryTest(unittest.TestCase):
-    def test_source_replay_repeats_train_samples_without_heldout_images(self):
-        records=[{'source':s,'split':'train','image':f'{s}-{i}.jpg'} for s,n in (('mio',3),('visdrone',1),('coco',2)) for i in range(n)]
-        records.append({'source':'visdrone','split':'test','image':'sealed-test.jpg'})
-        paths=source_replay(records)
-        self.assertEqual(len(paths),9)
-        self.assertEqual(paths.count('visdrone-0.jpg'),3)
-        self.assertNotIn('sealed-test.jpg',paths)
-        self.assertEqual(paths,source_replay(list(reversed(records))))
+    def test_selection_metadata_requires_its_matching_checkpoint(self):
+        with tempfile.TemporaryDirectory() as folder:
+            selected=Path(folder)/'selected.json';weights=Path(folder)/'balanced-best.pt'
+            selected.write_text(json.dumps({'mean':.5,'dataset_manifest_sha256':'same'}))
+            self.assertEqual(train_large.previous_selection_mean(selected,weights,'same'),-1)
+            weights.write_bytes(b'checkpoint')
+            self.assertEqual(train_large.previous_selection_mean(selected,weights,'same'),.5)
+            self.assertEqual(train_large.previous_selection_mean(selected,weights,'different'),-1)
     def test_average_gain_cannot_hide_forgetting_one_domain(self):
         baseline={s:{'mAP50_95':.3} for s in ('mio','visdrone','coco')}
         candidate={'mio':{'mAP50_95':.5},'visdrone':{'mAP50_95':.25},'coco':{'mAP50_95':.5}}

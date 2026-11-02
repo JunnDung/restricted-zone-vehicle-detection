@@ -108,7 +108,8 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
     weights = Path(weights) if weights else MODELS[model_key]
     if not weights.is_file():
         raise ValueError("Thiếu trọng số trong models/.")
-    settings = {"zone_map": zone_map.model_dump(), "model_key": model_key, "confidence": confidence, "imgsz": imgsz, "device": device, "max_seconds": max_seconds}
+    settings = {"zone_map": zone_map.model_dump(), "model_key": model_key, "weights_file":weights.name,"weights_sha256":sha256(weights),
+                "confidence": confidence, "imgsz": imgsz, "device": device, "max_seconds": max_seconds}
     atomic_json(output / "config.json", settings)
     if device == "auto":
         device = "0" if torch.cuda.is_available() else "cpu"

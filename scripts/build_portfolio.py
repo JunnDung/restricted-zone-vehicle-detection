@@ -52,7 +52,7 @@ def case_study(report):
 
 def main():
     report=json.loads((ROOT/'reports/compact-training.json').read_text())
-    weights=ROOT/('models/vehicle-large.pt' if report['accepted'] else 'models/checkpoints/colab-candidate.pt')
+    weights=ROOT/('models/vehicle-large.pt' if report['accepted'] else 'runs/zoneguard_compact/weights/deployment.pt')
     if sha256(weights)!=report['weights_sha256']:
         raise ValueError('Portfolio weights do not match the evaluated candidate')
     (ROOT/'docs/CASE_STUDY.md').write_text(case_study(report),encoding='utf-8')
