@@ -1,129 +1,109 @@
-# Xây dựng hệ thống phát hiện phương tiện đi vào khu vực cấm
+# ZoneGuard
 
-**ZoneGuard**: YOLO11 + ByteTrack, bản đồ đa giác trên camera, cảnh báo có ảnh bằng chứng và nhật ký SQLite. Phân tích video hoặc camera USB; giao diện tiếng Việt chạy tại máy.
+[![Checks](https://github.com/JunnDung/restricted-zone-vehicle-detection/actions/workflows/checks.yml/badge.svg)](https://github.com/JunnDung/restricted-zone-vehicle-detection/actions/workflows/checks.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
-Đề tài: **Xây dựng hệ thống phát hiện phương tiện đi vào khu vực cấm**. Sản phẩm gồm checkpoint AI dùng được ngay, trình vẽ vùng cấm theo góc camera và cảnh báo kèm bằng chứng. Mã nguồn được lưu theo từng phần tại [GitHub](https://github.com/JunnDung/restricted-zone-vehicle-detection).
+**Hệ thống phát hiện phương tiện đi vào khu vực cấm** từ video hoặc camera USB. Dự án cá nhân kết hợp YOLO11, ByteTrack và bản đồ vùng đa giác để ghi nhận vi phạm, lưu bằng chứng và xem lại trên dashboard tiếng Việt.
 
-![Dashboard ZoneGuard đã chạy hết video mẫu](reports/dashboard.png)
+![Dashboard ZoneGuard](reports/dashboard.png)
 
-## Kết quả mới · Colab T4, 02/11/2026
+## Tính năng
 
-Hoàn tất **15 epoch** (5 laptop + 10 tiếp tục trên Colab), nghiệm thu checkpoint và tích hợp vào dashboard. Dữ liệu gồm **12.000 train / 1.500 validation / 1.500 test**; giữ manifest và hash trọng số để kiểm chứng.
+- Phát hiện xe máy, ô tô, xe tải, xe buýt và nhóm phương tiện khác.
+- Theo dõi phương tiện bằng ByteTrack; dùng điểm giữa cạnh dưới bounding box để kiểm tra vùng cấm.
+- Vẽ và chỉnh sửa vùng đa giác theo góc nhìn camera; cấu hình loại xe, thời gian xác nhận và quy tắc cảnh báo.
+- Tổng hợp nhãn qua nhiều khung hình để giảm thay đổi loại xe; hiển thị nhóm chung khi chưa đủ bằng chứng phân loại.
+- Lưu ảnh bằng chứng, thời điểm vào vùng, track ID và nhật ký SQLite; xem video kết quả và xuất CSV/JSON.
+- Chạy suy luận trên CPU hoặc GPU NVIDIA; cung cấp dashboard và REST API qua FastAPI.
 
-| Test chọn lọc · mAP50–95 | Baseline | Model mới |
-|---|---:|---:|
-| MIO | 7,80% | **59,16%** |
-| VisDrone | 22,22% | **20,14%** |
-| COCO vehicles | 2,31% | **29,34%** |
-| Trung bình đều ba nguồn | 10,78% | **36,21% (+25,44 điểm %)** |
+## Cài đặt và chạy
 
-**Đánh đổi:** VisDrone test giảm 2,08 điểm %. Quy tắc nghiệm thu dùng validation, không chọn model bằng test. Video bãi xe chỉ có hai lượt: F1 có xét loại xe 0,50 → 1,00, chưa phải độ chính xác ngoài thực địa. Pipeline đủ 377 khung và xuất H.264 đạt **28,10 FPS trên T4** trong một lần chạy. Model có **2.590.815 tham số**, checkpoint inference **5,23 MiB**.
-
-[Case study + CV tiếng Anh](docs/CASE_STUDY.md) · [CV tiếng Việt](docs/CV.md) · [Notebook Colab](notebooks/ZoneGuard_Colab.ipynb) · [Hướng dẫn Colab](docs/COLAB.md) · [Kết quả JSON](reports/compact-training.json)
-
-![Learning curve và kết quả test](reports/portfolio-results.png)
-
-## Chạy tại Windows
-
-Demo model mới: [MP4 có overlay](reports/demo-colab-model.mp4), [kiểm chứng API](reports/final-verification.json). Trên Windows CPU: 377 khung, 2 cảnh báo đúng car, **17,90 FPS** gồm xuất video; một lần chạy khác đạt 16,51 FPS, không coi đây là benchmark ổn định.
-
-Dashboard chọn model mới tự động. CLI cần `--model large`; API dùng `model_key: "large"`. Mặc định CLI/API được giữ tương thích checkpoint cũ.
-
-Sau khi cài môi trường, nhấp `run.cmd`, mở **http://127.0.0.1:8003**. Server dùng một nguồn và một tiến trình; giữ cửa sổ server khi sử dụng. Bản clone không chứa `.venv`, dataset hoặc lịch sử runtime của máy cũ.
-
-Trên máy mới cần Python 3.12, internet khi cài dependency, sau đó chạy PowerShell tại thư mục dự án:
+Yêu cầu: **Windows, Python 3.12, Git**. GPU NVIDIA cần driver tương thích PyTorch CUDA 12.8; có thể dùng CPU nếu không có GPU.
 
 ```powershell
+git clone https://github.com/JunnDung/restricted-zone-vehicle-detection.git
+cd restricted-zone-vehicle-detection
 powershell -ExecutionPolicy Bypass -File setup.ps1 -Cuda
 .\run.cmd
 ```
 
-Bỏ `-Cuda` nếu dùng CPU. Có thể truyền `-Python C:\duong-dan\python.exe`. Setup tạo venv riêng, cài torch/torchvision từ kho chính thức, cài các phiên bản khóa và chạy kiểm thử. Trọng số và hai video mẫu đã nằm trong repository; chạy demo không cần tải dataset hoặc tài khoản cloud. Không chạy hai server cùng trỏ một thư mục runtime.
+Mở **http://127.0.0.1:8003**. Để cài bản CPU, bỏ `-Cuda`. Script tạo môi trường `.venv`, cài dependency và chạy kiểm thử. Có thể chỉ định Python bằng `setup.ps1 -Python C:\Python312\python.exe`.
 
-## Sử dụng
+1. Chọn video mẫu, tải video lên hoặc chọn camera USB.
+2. Vẽ vùng cấm trên ảnh xem trước và lưu bản đồ.
+3. Chọn mô hình, thiết bị và quy tắc xác nhận rồi bắt đầu phân tích.
+4. Mở cảnh báo để xem bằng chứng, diễn biến trước cảnh báo hoặc xuất kết quả.
 
-Khi dự đoán loại xe mâu thuẫn, hệ thống ghi **“Chưa xác định loại xe”**. Nhãn cần ít nhất 3 quan sát đủ ngưỡng và 75% tổng phiếu có trọng số trong 1 giây gần nhất; đây là tỷ trọng đồng thuận, không phải xác suất đúng. Điểm detection được tách khỏi điểm phân loại trung bình. Vùng cấm mọi loại xe vẫn ghi cảnh báo cần rà soát; vùng chỉ cấm một số loại chờ xác định được lớp. Lịch sử cũ giữ nguyên; chạy phiên mới để áp dụng bản sửa.
+Dữ liệu phiên chạy được lưu trong `runtime/` và không đưa vào Git. Bản đồ là vùng trên ảnh camera, không phải bản đồ địa lý; cần vẽ lại khi camera đổi vị trí.
 
-1. Chọn **Bãi xe · Intel**, video khác hoặc Camera USB (chỉ số 0–5). Video tối đa 500 MB, 15 phút, 54.000 khung và 4096 px mỗi chiều/9 megapixel.
-2. Kiểm tra đa giác trên mặt đường. **Thêm vùng**, click đỉnh theo thứ tự, Enter/Hoàn tất để kết thúc; kéo đỉnh để chỉnh; Escape để hủy. Tối đa 10 vùng, 3–32 đỉnh/vùng. Có thể nhập/xuất JSON.
-3. Chọn loại xe bị hạn chế, thời gian xác nhận, số lần phát hiện, vùng đệm biên và thời gian xác nhận ra ngoài. **Lưu bản đồ** lưu riêng cho nguồn đang chọn.
-4. Bấm **Bắt đầu giám sát**; chọn Âm báo để bật tiếng cảnh báo trong trình duyệt. Mở ảnh cảnh báo để rà soát; sau phiên, **Xem diễn biến trước cảnh báo** mở video từ hai giây trước khung đó.
-5. Sau phiên tải CSV UTF-8, JSON, cấu hình và video MP4/H.264. Lịch sử và ảnh còn lại sau khi khởi động lại; cấu hình phiên là bản chụp độc lập với bản đồ sửa sau đó.
+## Mô hình và kết quả
 
-Một cảnh báo cho mỗi cặp track/vùng/lượt. Xe phải xuất hiện liên tục đủ dwell và min_frames với detection đạt ngưỡng tin cậy; detection yếu vẫn được nối track nhưng đặt lại chuỗi chưa xác nhận. Mất quan sát hơn 1 giây không được cộng nối thời gian. Ra ngoài đủ exit_seconds mới cho cảnh báo lượt tiếp theo. Tùy chọn “Cảnh báo xe đã có…” tắt thì cần quan sát xe ở ngoài trước khi vào. Điểm giữa cạnh đáy bounding box xấp xỉ vị trí xe chạm đường; không xét đơn thuần góc hộp bao giao đa giác.
+Checkpoint mặc định trên dashboard là **YOLO11n**, fine-tune 15 epoch trên **12.000 ảnh train**, với **1.500 ảnh validation** và **1.500 ảnh test** từ MIO-TCD, VisDrone và COCO. Model có **2.590.815 tham số**, trọng số suy luận **5,23 MiB**.
 
-Khi GPU đang train, **Tự động** dùng CPU cho giám sát; chọn GPU trực tiếp bị chặn để tránh hết VRAM. Có thể giảm kích thước AI/độ phân giải nguồn nếu CPU chậm. Bản đồ là ROI trong ảnh, chưa có tọa độ GIS; hệ thống cảnh báo cục bộ bằng giao diện/âm báo/nhật ký, không gửi email hay webhook.
+| mAP50–95 trên test chọn lọc | Baseline | Fine-tuned |
+|---|---:|---:|
+| MIO-TCD | 7,80% | 59,16% |
+| VisDrone | 22,22% | 20,14% |
+| COCO vehicles | 2,31% | 29,34% |
+| Trung bình đều ba nguồn | 10,78% | **36,21%** |
 
-## Fine-tune nhanh tại máy, không mất phí cloud
+Trung bình tăng **25,44 điểm phần trăm**, nhưng VisDrone giảm **2,08 điểm phần trăm**. Đây là các split chọn lọc, không phải benchmark đầy đủ của các dataset. Quyết định chọn checkpoint dựa trên validation trước khi đánh giá test.
 
-Run YOLO11s lớn đã lỗi RAM trong epoch 1, chưa hoàn thành epoch. Cấu hình hiện tại dùng **YOLO11n 5 lớp đã học phương tiện**, fine-tune tối đa **15 epoch**, batch **4**, 640 px, AMP, không Mosaic/cache ảnh. Bộ mới chọn tối đa **12.000 ảnh train** từ COCO vehicles + MIO camera + VisDrone; có validation/test riêng theo ba nguồn và loại trùng chính xác. Số lượng thực tế, lớp nhãn và checksum ở `reports/compact-dataset.json`.
+![Learning curve và kết quả test](reports/evaluation.png)
+
+Video hồi quy bãi xe gồm 377 khung hình và hai lượt xe: F1 có xét loại xe tăng từ 0,50 lên 1,00; pipeline đạt 28,10 FPS trên Tesla T4, tính cả xuất H.264 trong một lần chạy. Phép đo này thực hiện trước khi bổ sung chính sách tổng hợp nhãn hiện tại. Hai lượt xe không đủ để suy ra độ chính xác ngoài thực địa.
+
+- [Phương pháp đánh giá và giới hạn](docs/EVALUATION.md)
+- [Model card, nguồn trọng số và giấy phép](models/MODEL_CARD.md)
+- [Kết quả chi tiết theo lớp và nguồn](reports/compact-training.json)
+- [Video kết quả](reports/demo-colab-model.mp4)
+
+## Huấn luyện
+
+[Notebook Google Colab](notebooks/ZoneGuard_Colab.ipynb) hỗ trợ GPU T4 và khôi phục checkpoint có optimizer. Xem [hướng dẫn Colab](docs/COLAB.md) để đóng gói, tái tạo dữ liệu và tải checkpoint về máy.
 
 ```powershell
-# Dataset hiện tại: kiểm lại toàn bộ ảnh/nhãn theo manifest.
-.\.venv\Scripts\python.exe scripts\prepare_compact.py
-# Chạy GPU ở nền; tự đánh giá và commit/push kết quả cuối.
+.\.venv\Scripts\python.exe scripts/package_colab.py
+```
+
+Để tái tạo dataset và bắt đầu một lần fine-tune cục bộ:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/restore_compact.py
 powershell -ExecutionPolicy Bypass -File start-training.ps1
-# Chỉ resume sau khi đã có runs/zoneguard_compact/weights/last.pt.
-powershell -ExecutionPolicy Bypass -File start-training.ps1 -Resume
 ```
 
-Trên máy mới, `prepare_visdrone.py` → `prepare_large.py` → `prepare_compact.py` tái tạo các nguồn và bước chọn mẫu. Khi compact đã được kiểm thành công, bộ lớn/raw trung gian không cần cho training. Nhật ký dọn dữ liệu ở `reports/data-cleanup.json`; video demo, model và lịch sử sử dụng được giữ.
-
-Theo dõi **Mô hình & hướng dẫn** trong dashboard, `reports/training-live.json`, `runtime/training.stdout.log` và `runtime/training.stderr.log`. Có số ảnh đã kiểm, batch đánh giá baseline và epoch/batch train; cập nhật khoảng 15 giây. Khi Windows còn dưới 2 GB RAM hoặc khả năng commit, training chờ. Khởi động GPU yêu cầu 2,5 GB VRAM trống. Các ứng dụng khác không bị đóng. `last.pt` được lưu mỗi epoch; chưa có checkpoint thì không thể resume batch giữa epoch. Giữ máy hoạt động, tránh Sleep.
-
-Model mới chỉ xuất hiện sau khi trung bình validation mAP50–95 tăng >0,005, không nguồn nào giảm quá 0,02 và F1 cảnh báo không giảm trên video hiệu chỉnh. Chưa khẳng định tăng độ chính xác hoặc tốc độ thực tế trước báo cáo cuối. COCO pretrained từng dùng dữ liệu COCO; split MIO chưa xác nhận độc lập camera. Chi tiết lựa chọn, nguồn và giới hạn: [TRAIN_NHANH](docs/TRAIN_NHANH.md), [MODEL_CARD](models/MODEL_CARD.md).
-
-Dataset/venv/log/runtime không đẩy GitHub. Repository giữ script, manifest hash, báo cáo và checkpoint demo; launcher dùng `--backup-github` để lưu kết quả cuối. Git dùng Credential Manager hiện có. Nếu push lỗi, kết quả vẫn ở máy; chạy `git push` sau khi kết nối lại.
-
-## Kết quả đã kiểm chứng
-
-| Kiểm tra | Kết quả |
-|---|---|
-| Quy tắc vùng, API, lưu lịch sử, chống tranh GPU, hash, phục hồi Colab và báo cáo | Xem CI và báo cáo kiểm chứng hiện tại |
-| Checkpoint nguồn VisDrone 5 lớp, test-dev sau chuyển đổi | mAP50 37,54%; mAP50–95 22,24% |
-| Video bãi xe Intel, 377 khung, cấu hình mặc định | Hai cảnh báo tại 6,56 s và 17,12 s |
-| Phân loại hai cảnh báo · baseline | Xe trắng đúng car; xe đỏ bị nhầm truck |
-| Phân loại hai cảnh báo · model mới | Cả hai gán car; F1 có xét loại xe 1,00 trên 2 lượt |
-| YOLO11n/YOLO11s COCO trên cùng video | 0 cảnh báo |
-| Dashboard | Vẽ ROI, lịch sử, ảnh bằng chứng, phát MP4/H.264, bố cục desktop/mobile được kiểm tra trong trình duyệt |
-
-Nguồn số đo: `reports/upstream-training.json`, `reports/model-comparison.json`, `reports/parking-reference.json`, `reports/system-validation.json` (snapshot kiểm tra ban đầu) và `reports/research-improvements.json` (đợt cải tiến sau tra cứu). Mốc video được gán tay với cửa sổ thời gian, chỉ gồm hai lượt và đã dùng hiệu chỉnh; F1 trên đó không thể suy rộng thành độ chính xác thực địa. FPS ban đầu có tiến trình dashboard chạy đồng thời nên chỉ tham khảo, chưa phải benchmark phần cứng có kiểm soát. Mô hình train lớn chưa được coi là cải thiện cho đến khi có báo cáo cuối và `accepted: true`.
-
-Camera USB có đường chạy và thông báo lỗi thiết bị, chưa được kiểm chứng bằng camera vật lý trong đợt bàn giao này. Ban đêm, camera rung, xe bị che và ID đổi vẫn là hạn chế. Không có nhận diện biển số, nhiều camera đồng thời hoặc RTSP trong phiên bản này.
-
-## Chạy không qua dashboard và kiểm thử
-
-```powershell
-.\.venv\Scripts\python.exe pipeline.py data\samples\car-detection.mp4 --zones config\parking.json --output runtime\cli-demo --device 0
-.\.venv\Scripts\python.exe pipeline.py camera:0 --output runtime\camera-demo --device cpu --max-seconds 60
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-Mỗi lần CLI cần output mới để không ghi đè phiên cũ. API docs ở http://127.0.0.1:8003/docs. Server mặc định chỉ bind 127.0.0.1; chưa có đăng nhập cho triển khai ra mạng.
+Cấu hình cục bộ dùng batch 4, ảnh 640 px, AMP, SGD và tối đa 15 epoch. Chỉ dùng `start-training.ps1 -Resume` khi đã có checkpoint huấn luyện trong `runs/zoneguard_compact/`. Trọng số inference đã bỏ optimizer không dùng để resume. Dữ liệu được tải từ nguồn gốc; manifest và SHA-256 giúp kiểm tra tính nhất quán.
 
 ## Cấu trúc
 
-| Đường dẫn | Vai trò |
+| Thành phần | Vai trò |
 |---|---|
-| app.py / web/ | API và giao diện tiếng Việt |
-| pipeline.py / zones.py / store.py | Detector/tracker, quy tắc lượt vào vùng, SQLite |
-| config/parking.json | Bản đồ mẫu ROI và chính sách |
-| models/ | Checkpoint hiện tại, COCO khởi tạo và model card |
-| scripts/ | Chuẩn bị dữ liệu, train, đánh giá cảnh báo |
-| reports/ | Nguồn gốc và số đo tái kiểm tra |
-| runtime/ | Video tải lên, bản đồ từng nguồn, phiên, bằng chứng, log (không commit) |
-| datasets/compact/ / runs/zoneguard_compact/ | Dataset hiện tại và checkpoint training (không commit) |
-| docs/BAO_CAO.md | Mô tả phương pháp và kế hoạch đánh giá thực địa |
-| docs/THAM_KHAO_CAI_TIEN.md | Đối chiếu nghiên cứu và kiểm chứng ban đầu |
-| docs/TRAIN_NHANH.md | Cấu hình hiện tại, lựa chọn dataset và xử lý bộ nhớ |
+| `app.py`, `web/` | REST API và dashboard |
+| `pipeline.py`, `classification.py` | Phát hiện, tracking và tổng hợp nhãn |
+| `zones.py`, `config/` | Bản đồ vùng và quy tắc cảnh báo |
+| `store.py` | Nhật ký và bằng chứng |
+| `models/` | Trọng số, model card và checkpoint phục hồi |
+| `scripts/`, `notebooks/` | Chuẩn bị dữ liệu, train, đánh giá và Colab |
+| `reports/` | Kết quả đánh giá, provenance và hình minh họa |
+| `tests/` | Kiểm thử API, dữ liệu, phân loại và quy tắc vùng |
 
-## Tham khảo và ghi công
+## Kiểm thử và đóng góp
 
-- [Ultralytics YOLO11](https://docs.ultralytics.com/models/yolo11/) và [tracking](https://docs.ultralytics.com/modes/track/): detector/tracker và pretrained COCO, AGPL-3.0.
-- [ByteTrack — FoundationVision](https://github.com/FoundationVision/ByteTrack): theo dõi kết hợp detection điểm tin cậy thấp.
-- [OpenCV pointPolygonTest](https://docs.opencv.org/4.x/dc/d48/tutorial_point_polygon_test.html): khoảng cách có dấu tới biên đa giác.
-- [VisDrone Dataset](https://github.com/VisDrone/VisDrone-Dataset): drone detector, giữ các split gốc. `prepare_visdrone.py` và checkpoint 5 lớp tái sử dụng từ dự án cùng máy nêu trong model card.
-- [MIO-TCD — tác giả](https://tcd.miovision.com/challenge/dataset.html): Luo và cộng sự, dữ liệu camera giao thông, CC BY-NC-SA 4.0.
-- [Intel sample videos](https://github.com/intel-iot-devkit/sample-videos): CC BY 4.0; attribution và URL/hash từng video trong `data/samples/NOTICE.md` và `sources.json`.
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
 
-Mã nguồn dự án: AGPL-3.0, xem LICENSE. Điều khoản dataset và mẫu video được giữ riêng theo nguồn; xem model card trước khi sử dụng trọng số kết hợp ngoài phạm vi nghiên cứu.
+GitHub Actions chạy kiểm thử trên mỗi push và pull request. Bạn có thể mở issue kèm bước tái hiện, cấu hình model và ảnh/video được phép chia sẻ. Pull request nên tập trung vào một thay đổi và bổ sung kiểm thử khi thay đổi logic.
+
+## Giới hạn
+
+Xe nhỏ, bị che, cảnh đêm hoặc góc nhìn khác dữ liệu train có thể làm sai nhãn và mất track. Chính sách tổng hợp nhãn giảm việc đổi loại xe nhưng có thể trả về nhóm chung khi chưa chắc chắn. Cần đánh giá bằng video có nhãn từ camera triển khai trước khi sử dụng cho quyết định thực tế.
+
+COCO/VisDrone từng được sử dụng trong phát triển model gốc; split MIO chưa được chứng minh độc lập camera. Các số đo hiện có không chứng minh khả năng tổng quát trên mọi camera.
+
+## Giấy phép và nguồn
+
+Mã nguồn theo [AGPL-3.0](LICENSE); Ultralytics cũng sử dụng AGPL-3.0. Giấy phép mã nguồn không thay thế điều khoản của dataset và trọng số: MIO-TCD có điều khoản **CC BY-NC-SA 4.0**, VisDrone và ảnh COCO theo nguồn tương ứng. Xem [model card](models/MODEL_CARD.md), [provenance dữ liệu](reports/compact-dataset.json) và [ghi nhận video mẫu](data/samples/NOTICE.md) trước khi tái sử dụng.
+
+Dựa trên [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), [ByteTrack](https://github.com/ifzhang/ByteTrack), [MIO-TCD](https://tcd.miovision.com/challenge/dataset.html), [VisDrone](https://github.com/VisDrone/VisDrone-Dataset) và [COCO](https://cocodataset.org/).

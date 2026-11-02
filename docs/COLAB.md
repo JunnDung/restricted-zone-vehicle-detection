@@ -14,7 +14,7 @@ Mở notebook trên Colab, chọn **Thời gian chạy → Thay đổi loại th
 
 Script tái tạo VisDrone, MIO và COCO từ nguồn gốc, giữ CRLF của file nhãn/manifest Windows để kiểm được SHA-256 run cũ. Chỉ resume khi manifest compact khớp `99d49b745fad70f1e40b0d5408fdd262976defecdab7187e91f4d112128db2b0`. Không bỏ qua kiểm tra nếu khác hash. Bản sao checkpoint gốc được kiểm hash, giữ nguyên optimizer và 5 epoch đã hoàn thành; đường dẫn dataset/output được chuyển sang Colab trên một bản sao.
 
-Bootstrap dùng `.colab-venv` riêng với thư viện GPU có sẵn của Colab, cài các dependency training từ `requirements-colab.txt`; không hạ phiên bản FastAPI/Gradio của notebook kernel. Mã train/evaluate chạy trong tiến trình riêng để không trộn module Pillow đã được kernel import trước đó với phiên bản dùng khôi phục dữ liệu. CUDA build thực tế được ghi trong `reports/colab-runtime.json`.
+Bootstrap dùng `.colab-venv` riêng với thư viện GPU có sẵn của Colab và dependency từ `requirements-colab.txt`. Mã train/evaluate chạy trong tiến trình riêng. CUDA build thực tế được ghi trong `reports/colab-runtime.json`.
 
 ## Thiết lập và đánh giá
 
@@ -30,8 +30,8 @@ Chạy lại ô status để lấy snapshot mới; output cũ không tự cập 
 
 Chạy ô download sau khi checkpoint được lưu, và sau khi đánh giá hoàn tất. Giải nén bundle vào checkout tương ứng. Gói Colab lần sau sẽ kèm `last.pt`, `best.pt`, kết quả CSV và lựa chọn checkpoint nếu tồn tại, để tiếp tục checkpoint mới nhất thay vì quay lại epoch 5. Không thể phục hồi chính xác phần batch chưa lưu trong epoch dở.
 
-Không đóng tab notebook hoặc tắt máy khi đang phụ thuộc vào MCP để nhận kết quả. Không dùng thao tác giả lập hoạt động để né hạn mức Colab. Notebook không tự lưu vào Drive khi đang dùng scratchpad; file `.ipynb` được giữ trong Git để có thể mở lại.
+Tải checkpoint về trước khi ngắt runtime; file trong máy ảo Colab có thể mất khi phiên kết thúc. Notebook không tự sao lưu checkpoint vào Google Drive. Bản lưu 5 epoch cùng checksum nằm tại `models/checkpoints/compact-last.pt` và `models/checkpoints/compact-last.json`.
 
 ## Nguồn
 
-[Ultralytics resume](https://docs.ultralytics.com/modes/train/#resuming-interrupted-trainings), [Google Colab MCP](https://github.com/googlecolab/colab-mcp), [Colab FAQ](https://research.google.com/colaboratory/faq.html). Các giấy phép nguồn dữ liệu vẫn áp dụng; xem [model card](../models/MODEL_CARD.md).
+[Ultralytics resume](https://docs.ultralytics.com/modes/train/#resuming-interrupted-trainings), [Colab FAQ](https://research.google.com/colaboratory/faq.html). Các giấy phép nguồn dữ liệu vẫn áp dụng; xem [model card](../models/MODEL_CARD.md).

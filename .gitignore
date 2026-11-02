@@ -12,3 +12,6 @@ reports/training-live.json
 /yolo*.pt
 dist/
 .colab-venv/
+reports/colab-bootstrap.json
+reports/dataset.json
+reports/large-dataset.json

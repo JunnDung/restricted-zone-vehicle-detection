@@ -1,0 +1,10 @@
+{
+  "completed_epochs": 5,
+  "target_epochs": 15,
+  "checkpoints": {
+    "last": {
+      "backup": "models/checkpoints/compact-last.pt",
+      "sha256": "ed9a55d2dda5225e941251292ce5cca3fb7795f772f395a3e7ada7bb1cdfc7bc"
+    }
+  }
+}

@@ -16,7 +16,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     if not torch.cuda.is_available():
         raise RuntimeError('Select a free T4 GPU runtime before starting this script')
-    pause=json.loads((ROOT/'reports/training-pause.json').read_text())
+    pause=json.loads((ROOT/'models/checkpoints/compact-last.json').read_text())
     source=ROOT/pause['checkpoints']['last']['backup']
     if sha256(source)!=pause['checkpoints']['last']['sha256']:
         raise ValueError('Archived checkpoint checksum differs')
