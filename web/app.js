@@ -1,6 +1,7 @@
 "use strict";
 const $ = id => document.getElementById(id);
 const labels = {motorcycle:"Xe máy",car:"Ô tô",truck:"Xe tải",bus:"Xe buýt",other:"Khác / xe đạp"};
+const eventLabel = event => event.class==="unknown"?"Phương tiện · Chưa xác định loại xe":labels[event.class];
 const canvas = $("canvas"), ctx = canvas.getContext("2d"), background = new Image();
 let zones = [], selected = 0, drawing = false, draft = [], drag = -1, jobId = null, job = null, allEvents = [], seen = new Set(), audio = null, polling = false, sourceVersion = 0, evidenceEvent = null;
 const statusLabels = {queued:"Đang chuẩn bị",running:"Đang giám sát",completed:"Đã hoàn tất",stopped:"Đã dừng",error:"Có lỗi"};
@@ -49,6 +50,7 @@ for (const [key,label] of Object.entries(labels)) {
   const wrapper=element("label"), box=element("input");box.type="checkbox";box.value=key;box.onchange=syncForm;wrapper.append(box,document.createTextNode(label));$("classChoices").append(wrapper);
   $("filterClass").append(option(key,label));
 }
+$("filterClass").append(option("unknown","Chưa xác định loại xe"));
 for(const id of ["zoneName","zoneColor","severity","dwell","minFrames","margin","exitTime","alertInitial"]) $(id).oninput=()=>{syncForm();renderZoneList();renderCanvas();};
 function renderCanvas() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -124,8 +126,9 @@ function renderEvents() {
   const events=allEvents.filter(e=>!filter||e.class===filter).slice().reverse();$("events").replaceChildren();
   if(!events.length){$("events").append(element("div","Chưa có cảnh báo phù hợp. Cảnh báo cần đủ số khung và thời gian xác nhận.","empty"));return;}
   for(const event of events){const card=element("button",undefined,"event"), image=element("img");image.src=`/api/jobs/${jobId}/evidence/${event.id}`;image.alt="Bằng chứng "+event.zone_name;image.loading="lazy";
-    const info=element("div"), time=element("span",`${event.confirmed_seconds.toFixed(2)}s · #${event.track_id}`,"time");info.append(time,element("strong",`${labels[event.class]} · ${event.zone_name}`),element("small",event.kind==="entry"?"Vào vùng từ bên ngoài":"Đã có trong vùng khi bắt đầu"),element("small",`${event.severity==="high"?"Vi phạm":"Lưu ý"} · Tin cậy ${(event.confidence*100).toFixed(0)}%`));card.append(image,info);
-    card.onclick=()=>{evidenceEvent=event;$("reviewEvidence").disabled=!["completed","stopped"].includes(job?.status);$("evidenceImage").src=image.src;$("evidenceCaption").textContent=`${event.zone_name} · ${labels[event.class]} · track #${event.track_id} · vào vùng ${event.entered_seconds}s, xác nhận ${event.confirmed_seconds}s`;$("evidenceDialog").showModal();};$("events").append(card);}
+    const scoreText=event.class==="unknown"?`Điểm phát hiện ${((event.detection_confidence??event.confidence)*100).toFixed(0)}% · Cần rà soát loại xe`:event.classification_status?`Điểm phân loại trung bình ${(event.confidence*100).toFixed(0)}% · Tỷ trọng phiếu ${(event.class_support*100).toFixed(0)}%`:`Điểm detection cũ ${(event.confidence*100).toFixed(0)}% · Chưa kiểm tra đồng thuận nhãn`;
+    const info=element("div"), time=element("span",`${event.confirmed_seconds.toFixed(2)}s · #${event.track_id}`,"time");info.append(time,element("strong",`${eventLabel(event)} · ${event.zone_name}`),element("small",event.kind==="entry"?"Vào vùng từ bên ngoài":"Đã có trong vùng khi bắt đầu"),element("small",`${event.class==="unknown"?"Cần rà soát":event.severity==="high"?"Vi phạm":"Lưu ý"} · ${scoreText}`));card.append(image,info);
+    card.onclick=()=>{evidenceEvent=event;$("reviewEvidence").disabled=!["completed","stopped"].includes(job?.status);$("evidenceImage").src=image.src;$("evidenceCaption").textContent=`${event.zone_name} · ${eventLabel(event)} · track #${event.track_id} · vào vùng ${event.entered_seconds}s, xác nhận ${event.confirmed_seconds}s`;$("evidenceDialog").showModal();};$("events").append(card);}
 }
 $("filterClass").onchange=renderEvents;$("closeEvidence").onclick=()=>$("evidenceDialog").close();
 function watchVideo(seconds=0) {canvas.hidden=true;$("liveFrame").hidden=true;const video=$("resultVideo");video.hidden=false;video.onloadedmetadata=()=>{video.currentTime=Math.min(Math.max(0,seconds),Math.max(0,video.duration-.05));video.play().catch(()=>{});};video.src=`/api/jobs/${jobId}/files/annotated.mp4`;}

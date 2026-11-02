@@ -102,7 +102,7 @@ class IntrusionEngine:
                     # No dwell/exit confirmation may bridge a detection gap.
                     state.since, state.outside_since, state.hits = None, None, 0
                 distance = cv2.pointPolygonTest(self.polygons[z.id], tuple(det["point"]), True)
-                eligible = det["class"] in z.classes
+                eligible = det["class"] in z.classes or (det['class']=='unknown' and set(z.classes)==set(CLASSES))
                 if distance > z.margin:
                     state.position = True
                 elif distance < -z.margin:
@@ -119,6 +119,7 @@ class IntrusionEngine:
                     if not state.alerted and state.hits >= z.min_frames and seconds - state.since + 1e-9 >= z.dwell_seconds and (z.alert_initial or state.saw_outside):
                         state.alerted = True
                         events.append({"track_id": det["track_id"], "class": det["class"], "confidence": round(det["confidence"], 4),
+                                       **{key:det[key] for key in ('detection_confidence','class_support','classification_status') if key in det},
                                        "zone_id": z.id, "zone_name": z.name, "severity": z.severity,
                                        "entered_seconds": round(state.since, 3), "confirmed_seconds": round(seconds, 3),
                                        "kind": "entry" if state.saw_outside else "initial_presence", "point": list(det["point"])})

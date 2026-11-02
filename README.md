@@ -42,6 +42,8 @@ Bỏ `-Cuda` nếu dùng CPU. Có thể truyền `-Python C:\duong-dan\python.ex
 
 ## Sử dụng
 
+Khi dự đoán loại xe mâu thuẫn, hệ thống ghi **“Chưa xác định loại xe”**. Nhãn cần ít nhất 3 quan sát đủ ngưỡng và 75% tổng phiếu có trọng số trong 1 giây gần nhất; đây là tỷ trọng đồng thuận, không phải xác suất đúng. Điểm detection được tách khỏi điểm phân loại trung bình. Vùng cấm mọi loại xe vẫn ghi cảnh báo cần rà soát; vùng chỉ cấm một số loại chờ xác định được lớp. Lịch sử cũ giữ nguyên; chạy phiên mới để áp dụng bản sửa.
+
 1. Chọn **Bãi xe · Intel**, video khác hoặc Camera USB (chỉ số 0–5). Video tối đa 500 MB, 15 phút, 54.000 khung và 4096 px mỗi chiều/9 megapixel.
 2. Kiểm tra đa giác trên mặt đường. **Thêm vùng**, click đỉnh theo thứ tự, Enter/Hoàn tất để kết thúc; kéo đỉnh để chỉnh; Escape để hủy. Tối đa 10 vùng, 3–32 đỉnh/vùng. Có thể nhập/xuất JSON.
 3. Chọn loại xe bị hạn chế, thời gian xác nhận, số lần phát hiện, vùng đệm biên và thời gian xác nhận ra ngoài. **Lưu bản đồ** lưu riêng cho nguồn đang chọn.

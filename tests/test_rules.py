@@ -13,6 +13,16 @@ def det(x=.5, cls="car", track=1):
 
 
 class RulesTest(unittest.TestCase):
+    def test_unresolved_vehicle_alerts_only_when_all_vehicle_types_are_restricted(self):
+        unknown={**det(cls='unknown'),'classification_status':'uncertain','detection_confidence':.52,'class_support':.63}
+        engine=IntrusionEngine(config())
+        for t in (0,.1,.3):events=engine.update([unknown],t)
+        self.assertEqual(len(events),1)
+        self.assertEqual(events[0]['class'],'unknown')
+        self.assertEqual(events[0]['detection_confidence'],.52)
+        engine=IntrusionEngine(config(classes=['truck']))
+        for t in (0,.1,.3):self.assertEqual(engine.update([unknown],t),[])
+
     def test_weak_detections_cannot_confirm_or_rearm_a_visit(self):
         e=IntrusionEngine(config())
         weak={**det(),"confidence":.12,"confirmable":False}

@@ -8,7 +8,6 @@ import os
 import subprocess
 import time
 import uuid
-from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +19,7 @@ import yaml
 from ultralytics import YOLO
 
 from zones import CLASSES, IntrusionEngine, ZoneMap
+from classification import TrackLabel
 
 ROOT = Path(__file__).resolve().parent
 COCO_MAP = {3: "motorcycle", 2: "car", 7: "truck", 5: "bus", 1: "other"}
@@ -88,7 +88,12 @@ def draw(frame, zone_map, detections, active, seconds, count):
         cv2.rectangle(canvas, (x1,y1), (x2,y2), color, 2)
         px,py = d["point"]
         cv2.circle(canvas, (int(px*w),int(py*h)), 5, color, -1)
-        cv2.putText(canvas, f"#{d['track_id']} {d['class']} {d['confidence']:.2f}", (x1,max(20,y1-5)), cv2.FONT_HERSHEY_SIMPLEX, .5, color, 1, cv2.LINE_AA)
+        label='vehicle: review type' if d['class']=='unknown' else f"{d['class']} {d['confidence']:.2f}"
+        text=f"#{d['track_id']} {label}"
+        (tw,th),baseline=cv2.getTextSize(text,cv2.FONT_HERSHEY_SIMPLEX,.5,1)
+        tx=min(max(0,x1),max(0,w-tw-4));ty=min(h-baseline,max(50,y1-5))
+        cv2.rectangle(canvas,(tx,ty-th-3),(tx+tw+3,ty+baseline),(25,25,25),-1)
+        cv2.putText(canvas,text,(tx,ty),cv2.FONT_HERSHEY_SIMPLEX,.5,color,1,cv2.LINE_AA)
     cv2.putText(canvas, f"ZoneGuard | {seconds:.1f}s | alerts: {count}", (15,28), cv2.FONT_HERSHEY_SIMPLEX, .65, (255,255,255), 2, cv2.LINE_AA)
     return canvas
 
@@ -123,7 +128,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
     tracker_path = output / "tracker.yaml"
     tracker_path.write_text(yaml.safe_dump(tracker), encoding="utf-8")
     engine = IntrusionEngine(zone_map)
-    events, votes, last_seen = [], defaultdict(lambda: defaultdict(float)), {}
+    events, votes, last_seen = [], {}, {}
     cap = cv2.VideoCapture(source if live else str(source))
     writer = None
     raw = output / "raw.mp4"
@@ -173,10 +178,9 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
                 for box, cls, conf, track in zip(boxes.xyxy.cpu().tolist(), boxes.cls.cpu().tolist(), boxes.conf.cpu().tolist(), boxes.id.cpu().tolist()):
                     track = int(track)
                     category = COCO_MAP[int(cls)] if coco else CLASSES[int(cls)]
-                    votes[track][category] += float(conf)
+                    classification=votes.setdefault(track,TrackLabel()).update(category,float(conf),seconds,confidence)
                     last_seen[track] = seconds
-                    category = max(votes[track], key=votes[track].get)
-                    detections.append({"track_id": track, "class": category, "confidence": float(conf), "confirmable": conf >= confidence, "bbox": box,
+                    detections.append({"track_id": track, **classification, "confirmable": conf >= confidence, "bbox": box,
                                        "point": (min(1,max(0,(box[0]+box[2])/(2*w))), min(1,max(0,box[3]/h)))})
             # Bound metadata for long camera sessions; ByteTrack IDs are monotonic.
             for track in list(last_seen):
@@ -219,7 +223,7 @@ def analyze(source, output, zone_map, *, model_key="vehicle", weights=None, conf
         cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", str(raw), "-an", "-c:v", "libx264", "-preset", "fast", "-crf", "23", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output / "annotated.mp4")]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
         raw.unlink()
-    fields = ["id","track_id","class","zone_id","zone_name","severity","kind","entered_seconds","confirmed_seconds","confidence","analyzed_utc","frame_index","evidence"]
+    fields = ["id","track_id","class","zone_id","zone_name","severity","kind","entered_seconds","confirmed_seconds","confidence","detection_confidence","class_support","classification_status","analyzed_utc","frame_index","evidence"]
     with (output / "events.csv").open("w", newline="", encoding="utf-8-sig") as f:
         export = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         export.writeheader()

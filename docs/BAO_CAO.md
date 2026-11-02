@@ -6,6 +6,8 @@ Phân tích hình ảnh từ camera cố định để xác định phương ti�
 
 ## Phương pháp
 
+Cập nhật sửa nhãn: dùng đồng thuận trong 1 giây gần nhất, tối thiểu 3 quan sát đủ ngưỡng, lớp thắng chiếm ít nhất 75% tổng phiếu có trọng số. Bằng chứng mâu thuẫn được ghi `unknown` để rà soát; lớp chưa rõ chỉ tạo cảnh báo ở vùng cấm tất cả loại xe. Điểm detection, điểm phân loại trung bình và tỷ trọng phiếu được tách riêng. Điều này giảm báo sai khi nhãn dao động nhưng không sửa được detector luôn đoán sai nhất quán.
+
 ```mermaid
 flowchart LR
     A[Video hoặc USB] --> B[YOLO11 phát hiện xe]
