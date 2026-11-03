@@ -21,7 +21,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from pipeline import atomic_json, analyze
 from zones import ZoneMap
-from evaluate_events import score
+from evaluate_events import evaluate as evaluate_events
 
 
 def metrics_dict(metrics):
@@ -192,10 +192,9 @@ def main():
     video_scores={}
     for key,weights in (("baseline",ROOT/"models/vehicle-yolo11n.pt"),("candidate",best)):
         output=ROOT/".local"/("admission-"+key+"-"+datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S"))
-        result=analyze(ROOT/reference["source"],output,ZoneMap.model_validate_json((ROOT/reference["zone_map"]).read_text()),weights=weights,device="0",imgsz=args.imgsz)
-        if result["source_sha256"]!=reference["source_sha256"]:
-            raise ValueError("Admission video was modified")
-        video_scores[key]={"class_aware":score(reference["events"],result["events"]),"alert_only":score(reference["events"],result["events"],False),
+        zone_map=ZoneMap.model_validate_json((ROOT/reference["zone_map"]).read_text())
+        result=analyze(ROOT/reference["source"],output,zone_map,weights=weights,device="0",imgsz=args.imgsz)
+        video_scores[key]={**evaluate_events(reference,result,zone_map),
                            "processing_fps":result['processing_fps'],"inference_ms":result['inference_ms'],"processed_frames":result['processed_frames'],
                            "elapsed_seconds":result['elapsed_seconds'],"includes_video_encoding":True}
         gc.collect();torch.cuda.empty_cache()
