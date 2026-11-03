@@ -27,9 +27,42 @@ Trung bình đều nguồn là trung bình cộng của ba mAP, không phải mA
 
 Video bãi xe có 377 khung hình và hai lượt xe có nhãn trong [parking reference](../reports/parking-reference.json). F1 cảnh báo là 1,00 cho cả baseline và model fine-tuned; F1 có xét loại xe tăng từ 0,50 lên 1,00. Pipeline đầy đủ, tính xuất H.264, đạt lần lượt 27,93 và 28,10 FPS trên T4 trong một lần chạy.
 
-Video này đã dùng để hiệu chỉnh nên chỉ là kiểm tra hồi quy. Kết quả được đo trước khi bổ sung chính sách tổng hợp nhãn qua nhiều khung hình. Chính sách hiện tại có thể trả về nhóm chung khi các nhãn xung đột, thay vì luôn gán một loại xe cụ thể. Chưa đo lại toàn bộ benchmark tốc độ và F1 cho chính sách mới.
+Các số đo T4 ở trên thuộc pipeline trước khi bổ sung chính sách tổng hợp nhãn. Chính sách hiện tại có thể trả về nhóm chung khi các nhãn xung đột, thay vì luôn gán một loại xe cụ thể. Phép đo mới bên dưới sử dụng pipeline hiện tại; không so sánh FPS giữa hai máy như cùng một thí nghiệm.
 
 [Video kết quả](../reports/demo-colab-model.mp4) · [Thông tin môi trường](../reports/colab-runtime.json)
+
+## Precision/recall cảnh báo và cảnh báo sai mỗi giờ
+
+Đo lại trên RTX 3060 Laptop, cùng checkpoint baseline/fine-tuned, cùng bản đồ `config/parking.json` và toàn bộ **30,16 giây = 377 khung / 12,5 FPS nguồn**. Nhãn gồm hai lượt xe; video đã dùng để hiệu chỉnh nên đây là kiểm tra hồi quy.
+
+| Chế độ | Mô hình | TP | FP | FN | Precision | Recall | F1 | FP/giờ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Không xét loại xe | Baseline | 2 | 0 | 0 | 100% | 100% | 1,00 | 0,00 |
+| Không xét loại xe | Fine-tuned | 2 | 0 | 0 | 100% | 100% | 1,00 | 0,00 |
+| Có xét loại xe | Baseline | 0 | 2 | 2 | 0% | 0% | 0,00 | 238,73 |
+| Có xét loại xe | Fine-tuned | 2 | 0 | 0 | 100% | 100% | 1,00 | 0,00 |
+
+- **TP:** cảnh báo ghép được với một lượt xe có nhãn, cùng vùng và nằm trong cửa sổ thời gian xác nhận. Xét cảnh báo theo thời gian, ưu tiên cửa sổ hợp lệ kết thúc sớm nhất khi chồng nhau. Mỗi lượt chỉ ghép một lần; cảnh báo trùng tính là FP.
+- **FP:** cảnh báo không ghép được; **FN:** lượt vi phạm có nhãn bị bỏ sót.
+- **Precision = TP / (TP + FP)**; **recall = TP / (TP + FN)**. Khi mẫu số bằng 0, công cụ quy ước trả 0 và vẫn giữ các số đếm để diễn giải.
+- **Cảnh báo sai/giờ = FP × 3.600 / thời lượng video đã đánh giá**. Mẫu số là thời gian quan sát, không phải thời gian máy xử lý. Đây là tốc độ phát sinh lỗi, không phải tỷ lệ FPR dựa trên true negative.
+
+`alert_only` không yêu cầu đúng loại xe: baseline vẫn bắt được cả hai lượt đi vào vùng. `class_aware` yêu cầu nhãn khớp: baseline trả một `unknown` và một `truck` cho hai ô tô, nên có hai FP và hai FN. FP/giờ có xét loại xe bao gồm lỗi nhãn, không đồng nghĩa có từng ấy cảnh báo vùng cấm giả. Ví dụ, một FP trong clip này đã tương đương 119,36 FP/giờ khi quy đổi.
+
+**Không quan sát thấy FP trong 30,16 giây không chứng minh tốc độ báo sai dài hạn bằng 0.** Cần video có nhãn dài hơn, gồm cả đoạn không vi phạm và nhiều điều kiện camera, để đánh giá vận hành thực tế. Các cửa sổ thời gian hiện tại được gán thủ công và còn thô.
+
+[Báo cáo mới](../reports/alert-evaluation.json) lưu cả hai chế độ, thời lượng, các lượt khớp/sai/bỏ sót, cấu hình, hash trọng số và mã pipeline. Báo cáo training cũ được giữ nguyên để phân biệt hai phiên bản pipeline.
+
+### Chạy lại phép đánh giá
+
+Từ thư mục dự án sau khi cài đặt:
+
+```powershell
+.\.venv\Scripts\python.exe pipeline.py data/samples/car-detection.mp4 --zones config/parking.json --model large --device auto --output .local/alert-eval-current
+.\.venv\Scripts\python.exe scripts/evaluate_events.py reports/parking-reference.json .local/alert-eval-current/result.json --output .local/alert-eval-current/metrics.json
+```
+
+Dùng `--model vehicle` và thư mục output khác để đo baseline. Mỗi lần chạy cần thư mục output mới. Tham chiếu phải gán nhãn đủ toàn bộ video; thời lượng tính từ số khung/FPS với nguồn có tốc độ khung hình cố định. CLI kiểm hash video, bản đồ và quy tắc vùng, FPS hữu hạn dương, số khung đã xử lý và cửa sổ nhãn. Nó từ chối phiên dừng sớm, camera live hoặc clip chỉ chạy một phần; không dùng demo 18 giây trong README để suy ra số đo toàn video. Các lần training mới cũng ghi precision/recall và FP/giờ vào phần `admission_video`.
 
 ## Giới hạn diễn giải
 

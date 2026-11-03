@@ -32,6 +32,8 @@ Checkpoint được chọn theo validation trước khi đo test. VisDrone test 
 
 Xem [phương pháp và giới hạn](../docs/EVALUATION.md), [kết quả chi tiết](../reports/compact-training.json) và [quyết định chọn checkpoint](../reports/colab-checkpoint-selection.json).
 
+Đánh giá lại pipeline hiện tại trên toàn bộ video hồi quy 30,16 giây: model fine-tuned có precision/recall cảnh báo 100%/100%, TP=2, FP=0, FN=0 và 0,00 FP/giờ, cho cả chế độ có/không xét loại xe. Đây là kết quả trên hai lượt hiệu chỉnh, không chứng minh tốc độ báo sai dài hạn bằng 0. [Báo cáo cảnh báo](../reports/alert-evaluation.json) ghi cấu hình và kết quả của cả baseline.
+
 ## Baseline và trọng số đối chứng
 
 `vehicle-yolo11n.pt` là YOLO11n fine-tune VisDrone2019 DET, từ [dự án nhận dạng phương tiện](https://github.com/JunnDung/vehicle-type-recognition), commit `3b5ce0645801d5a4f4aa0e31dadb990cbea57f9c`. SHA-256: `819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc`.

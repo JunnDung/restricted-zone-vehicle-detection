@@ -1,0 +1,478 @@
+{
+  "evaluated_utc": "2026-11-03T01:02:39.901524+00:00",
+  "protocol": "Full-video, one-to-one matching by zone and inclusive confirmation window; alerts sorted by time, earliest-ending eligible window first; class_aware also requires the reference vehicle class. FP/hour = FP * 3600 / observed video seconds.",
+  "limitations": "Single 30.16-second calibration video with two labeled visits, not an independent field benchmark. Zero observed FP is not evidence of a zero long-term false-alert rate.",
+  "reference": "reports/parking-reference.json",
+  "reference_sha256": "d24035535e322912914312e2bcbe82fd38f48e3f4e3df2e9385b0c2abc7fec36",
+  "source_sha256": "d31e0ebf194cc16e50eea784e7c3b0b1bb7976a4fb9b3fec26cb92a6704cca34",
+  "zone_map": {
+    "zones": [
+      {
+        "id": "gate",
+        "name": "Lối vào hạn chế",
+        "color": "#ff665e",
+        "points": [
+          [
+            0.38,
+            0.32
+          ],
+          [
+            0.68,
+            0.32
+          ],
+          [
+            0.78,
+            0.95
+          ],
+          [
+            0.25,
+            0.95
+          ]
+        ],
+        "classes": [
+          "motorcycle",
+          "car",
+          "truck",
+          "bus",
+          "other"
+        ],
+        "dwell_seconds": 0.4,
+        "min_frames": 3,
+        "exit_seconds": 0.6,
+        "margin": 0.006,
+        "alert_initial": true,
+        "severity": "high"
+      }
+    ]
+  },
+  "pipeline_commit": "0ab3831404a5bd01e3ad3b8d402ae51205c90eed",
+  "code_sha256": {
+    "pipeline.py": "3e8645c4abcf38a20e8cdf3674bda81b0fe86e3e40111aef53e0103df5b27523",
+    "classification.py": "ddf8851c011966bedbf47304e6eedbfde3a38d7533e9c42a9e001ffd94156a4c",
+    "zones.py": "61ee272ab2a6318fc5659aa444eb97f07ed2f3820270db32fddff96c1829ea78",
+    "scripts/evaluate_events.py": "dc67d3e70c01af6b57708e3ae97d3fb8b73b7030d7587d57d5a9d16ba5e4d86f"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "torch": "2.11.0+cu128",
+    "ultralytics": "8.3.253",
+    "device": "NVIDIA GeForce RTX 3060 Laptop GPU"
+  },
+  "models": {
+    "baseline": {
+      "weights": "models/vehicle-yolo11n.pt",
+      "weights_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+      "processed_frames": 377,
+      "video_fps": 12.5,
+      "elapsed_seconds": 18.06,
+      "processing_fps": 20.87,
+      "settings": {
+        "zone_map": {
+          "zones": [
+            {
+              "id": "gate",
+              "name": "Lối vào hạn chế",
+              "color": "#ff665e",
+              "points": [
+                [
+                  0.38,
+                  0.32
+                ],
+                [
+                  0.68,
+                  0.32
+                ],
+                [
+                  0.78,
+                  0.95
+                ],
+                [
+                  0.25,
+                  0.95
+                ]
+              ],
+              "classes": [
+                "motorcycle",
+                "car",
+                "truck",
+                "bus",
+                "other"
+              ],
+              "dwell_seconds": 0.4,
+              "min_frames": 3,
+              "exit_seconds": 0.6,
+              "margin": 0.006,
+              "alert_initial": true,
+              "severity": "high"
+            }
+          ]
+        },
+        "model_key": "vehicle",
+        "weights_file": "vehicle-yolo11n.pt",
+        "weights_sha256": "819f8c0c2864ea6efc64e974fb5de9609f3a958dfe7f88acd4b8961cc27f5efc",
+        "confidence": 0.3,
+        "imgsz": 640,
+        "device": "0",
+        "max_seconds": 900
+      },
+      "class_aware": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "observed_seconds": 30.16,
+        "false_positives_per_hour": 238.72679045092838,
+        "matched": [],
+        "false_positives": [
+          {
+            "track_id": 2,
+            "class": "unknown",
+            "confidence": 0.7149,
+            "detection_confidence": 0.5339533090591431,
+            "class_support": 0.6786867716778082,
+            "classification_status": "uncertain",
+            "zone_id": "gate",
+            "zone_name": "Lối vào hạn chế",
+            "severity": "high",
+            "entered_seconds": 6.16,
+            "confirmed_seconds": 6.56,
+            "kind": "entry",
+            "point": [
+              0.4566902816295624,
+              0.7231827488651982
+            ],
+            "id": "53721a3dd5a448fd8739d5e47b9eb520",
+            "analyzed_utc": "2026-11-03T01:02:47.848169+00:00",
+            "frame_index": 82,
+            "evidence": "evidence/53721a3dd5a448fd8739d5e47b9eb520.jpg"
+          },
+          {
+            "track_id": 8,
+            "class": "truck",
+            "confidence": 0.8147,
+            "detection_confidence": 0.8488048911094666,
+            "class_support": 1.0,
+            "classification_status": "resolved",
+            "zone_id": "gate",
+            "zone_name": "Lối vào hạn chế",
+            "severity": "high",
+            "entered_seconds": 16.72,
+            "confirmed_seconds": 17.12,
+            "kind": "entry",
+            "point": [
+              0.5077919661998749,
+              0.7227707615605107
+            ],
+            "id": "75d5594a44654dd2afa65ee4ff2925ee",
+            "analyzed_utc": "2026-11-03T01:02:51.636384+00:00",
+            "frame_index": 214,
+            "evidence": "evidence/75d5594a44654dd2afa65ee4ff2925ee.jpg"
+          }
+        ],
+        "missed": [
+          {
+            "vehicle": "first-white-car",
+            "class": "car",
+            "zone_id": "gate",
+            "min_seconds": 6.0,
+            "max_seconds": 7.5
+          },
+          {
+            "vehicle": "red-car",
+            "class": "car",
+            "zone_id": "gate",
+            "min_seconds": 16.2,
+            "max_seconds": 18.2
+          }
+        ]
+      },
+      "alert_only": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "observed_seconds": 30.16,
+        "false_positives_per_hour": 0.0,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 2,
+              "class": "unknown",
+              "confidence": 0.7149,
+              "detection_confidence": 0.5339533090591431,
+              "class_support": 0.6786867716778082,
+              "classification_status": "uncertain",
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.4566902816295624,
+                0.7231827488651982
+              ],
+              "id": "53721a3dd5a448fd8739d5e47b9eb520",
+              "analyzed_utc": "2026-11-03T01:02:47.848169+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/53721a3dd5a448fd8739d5e47b9eb520.jpg"
+            }
+          },
+          {
+            "expected": {
+              "vehicle": "red-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 16.2,
+              "max_seconds": 18.2
+            },
+            "predicted": {
+              "track_id": 8,
+              "class": "truck",
+              "confidence": 0.8147,
+              "detection_confidence": 0.8488048911094666,
+              "class_support": 1.0,
+              "classification_status": "resolved",
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 16.72,
+              "confirmed_seconds": 17.12,
+              "kind": "entry",
+              "point": [
+                0.5077919661998749,
+                0.7227707615605107
+              ],
+              "id": "75d5594a44654dd2afa65ee4ff2925ee",
+              "analyzed_utc": "2026-11-03T01:02:51.636384+00:00",
+              "frame_index": 214,
+              "evidence": "evidence/75d5594a44654dd2afa65ee4ff2925ee.jpg"
+            }
+          }
+        ],
+        "false_positives": [],
+        "missed": []
+      }
+    },
+    "fine_tuned": {
+      "weights": "models/vehicle-large.pt",
+      "weights_sha256": "4affce6c60f7d7c4b8b75b172209938e6673fa0404037862f3395797be72cab3",
+      "processed_frames": 377,
+      "video_fps": 12.5,
+      "elapsed_seconds": 11.91,
+      "processing_fps": 31.66,
+      "settings": {
+        "zone_map": {
+          "zones": [
+            {
+              "id": "gate",
+              "name": "Lối vào hạn chế",
+              "color": "#ff665e",
+              "points": [
+                [
+                  0.38,
+                  0.32
+                ],
+                [
+                  0.68,
+                  0.32
+                ],
+                [
+                  0.78,
+                  0.95
+                ],
+                [
+                  0.25,
+                  0.95
+                ]
+              ],
+              "classes": [
+                "motorcycle",
+                "car",
+                "truck",
+                "bus",
+                "other"
+              ],
+              "dwell_seconds": 0.4,
+              "min_frames": 3,
+              "exit_seconds": 0.6,
+              "margin": 0.006,
+              "alert_initial": true,
+              "severity": "high"
+            }
+          ]
+        },
+        "model_key": "vehicle",
+        "weights_file": "vehicle-large.pt",
+        "weights_sha256": "4affce6c60f7d7c4b8b75b172209938e6673fa0404037862f3395797be72cab3",
+        "confidence": 0.3,
+        "imgsz": 640,
+        "device": "0",
+        "max_seconds": 900
+      },
+      "class_aware": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "observed_seconds": 30.16,
+        "false_positives_per_hour": 0.0,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 1,
+              "class": "car",
+              "confidence": 0.856,
+              "detection_confidence": 0.6092358827590942,
+              "class_support": 0.8970211495582675,
+              "classification_status": "resolved",
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.45450466871261597,
+                0.7107091833043981
+              ],
+              "id": "a1369c4760c441e7bf0f44a6fbb8010f",
+              "analyzed_utc": "2026-11-03T01:03:01.016190+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/a1369c4760c441e7bf0f44a6fbb8010f.jpg"
+            }
+          },
+          {
+            "expected": {
+              "vehicle": "red-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 16.2,
+              "max_seconds": 18.2
+            },
+            "predicted": {
+              "track_id": 5,
+              "class": "car",
+              "confidence": 0.9417,
+              "detection_confidence": 0.9507027268409729,
+              "class_support": 1.0,
+              "classification_status": "resolved",
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 16.72,
+              "confirmed_seconds": 17.12,
+              "kind": "entry",
+              "point": [
+                0.5074718594551086,
+                0.711327870686849
+              ],
+              "id": "036d9cec5db24e538529c8a619e5137b",
+              "analyzed_utc": "2026-11-03T01:03:04.809380+00:00",
+              "frame_index": 214,
+              "evidence": "evidence/036d9cec5db24e538529c8a619e5137b.jpg"
+            }
+          }
+        ],
+        "false_positives": [],
+        "missed": []
+      },
+      "alert_only": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "observed_seconds": 30.16,
+        "false_positives_per_hour": 0.0,
+        "matched": [
+          {
+            "expected": {
+              "vehicle": "first-white-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 6.0,
+              "max_seconds": 7.5
+            },
+            "predicted": {
+              "track_id": 1,
+              "class": "car",
+              "confidence": 0.856,
+              "detection_confidence": 0.6092358827590942,
+              "class_support": 0.8970211495582675,
+              "classification_status": "resolved",
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 6.16,
+              "confirmed_seconds": 6.56,
+              "kind": "entry",
+              "point": [
+                0.45450466871261597,
+                0.7107091833043981
+              ],
+              "id": "a1369c4760c441e7bf0f44a6fbb8010f",
+              "analyzed_utc": "2026-11-03T01:03:01.016190+00:00",
+              "frame_index": 82,
+              "evidence": "evidence/a1369c4760c441e7bf0f44a6fbb8010f.jpg"
+            }
+          },
+          {
+            "expected": {
+              "vehicle": "red-car",
+              "class": "car",
+              "zone_id": "gate",
+              "min_seconds": 16.2,
+              "max_seconds": 18.2
+            },
+            "predicted": {
+              "track_id": 5,
+              "class": "car",
+              "confidence": 0.9417,
+              "detection_confidence": 0.9507027268409729,
+              "class_support": 1.0,
+              "classification_status": "resolved",
+              "zone_id": "gate",
+              "zone_name": "Lối vào hạn chế",
+              "severity": "high",
+              "entered_seconds": 16.72,
+              "confirmed_seconds": 17.12,
+              "kind": "entry",
+              "point": [
+                0.5074718594551086,
+                0.711327870686849
+              ],
+              "id": "036d9cec5db24e538529c8a619e5137b",
+              "analyzed_utc": "2026-11-03T01:03:04.809380+00:00",
+              "frame_index": 214,
+              "evidence": "evidence/036d9cec5db24e538529c8a619e5137b.jpg"
+            }
+          }
+        ],
+        "false_positives": [],
+        "missed": []
+      }
+    }
+  }
+}

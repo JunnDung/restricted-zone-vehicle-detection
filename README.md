@@ -61,6 +61,21 @@ Trung bình tăng **25,44 điểm phần trăm**, nhưng VisDrone giảm **2,08 
 
 Video hồi quy bãi xe gồm 377 khung hình và hai lượt xe: F1 có xét loại xe tăng từ 0,50 lên 1,00; pipeline đạt 28,10 FPS trên Tesla T4, tính cả xuất H.264 trong một lần chạy. Phép đo này thực hiện trước khi bổ sung chính sách tổng hợp nhãn hiện tại. Hai lượt xe không đủ để suy ra độ chính xác ngoài thực địa.
 
+### Precision/recall cảnh báo
+
+Đánh giá lại **pipeline hiện tại** trên toàn bộ video bãi xe có nhãn: **30,16 giây, 377 khung hình, hai lượt vi phạm**. Các chỉ số dưới đây ghép cảnh báo với lượt xe theo vùng và cửa sổ thời gian, không yêu cầu đúng loại xe (`alert_only`).
+
+| Chỉ số cảnh báo | Baseline | Fine-tuned |
+|---|---:|---:|
+| Precision | 100% | 100% |
+| Recall | 100% | 100% |
+| TP / FP / FN | 2 / 0 / 0 | 2 / 0 / 0 |
+| Cảnh báo sai mỗi giờ · FP × 3.600 / giây video | 0,00 | 0,00 |
+
+Khi yêu cầu **đúng cả loại xe** (`class_aware`), precision/recall của baseline là 0%/0%, của model fine-tuned là 100%/100%. Chi tiết lỗi và công thức nằm trong [hướng dẫn đánh giá](docs/EVALUATION.md); kết quả, checksum và cấu hình được lưu tại [alert-evaluation.json](reports/alert-evaluation.json).
+
+**Phạm vi:** không quan sát thấy cảnh báo sai trong 30,16 giây này; con số 0,00 FP/giờ không chứng minh hệ thống không báo sai khi chạy dài giờ hoặc trên camera khác. Video đã dùng để hiệu chỉnh, chỉ là kiểm tra hồi quy.
+
 - [Phương pháp đánh giá và giới hạn](docs/EVALUATION.md)
 - [Model card, nguồn trọng số và giấy phép](models/MODEL_CARD.md)
 - [Kết quả chi tiết theo lớp và nguồn](reports/compact-training.json)
